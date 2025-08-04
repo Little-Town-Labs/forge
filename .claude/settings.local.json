@@ -15,7 +15,8 @@
       "Bash(npm run dev:*)",
       "Bash(npm uninstall:*)",
       "Bash(npx tailwindcss init:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }
