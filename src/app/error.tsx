@@ -108,7 +108,7 @@ export default function Error({ error, reset }: ErrorProps) {
           {isClerkError ? (
             <div>
               <p className="mb-2">
-                We're having trouble with the authentication system. This might be temporary.
+                We&apos;re having trouble with the authentication system. This might be temporary.
               </p>
               <p className="text-sm">
                 Try signing out and back in, or contact support if this persists.
@@ -120,7 +120,7 @@ export default function Error({ error, reset }: ErrorProps) {
                 Unable to connect to our servers. Please check your internet connection.
               </p>
               <p className="text-sm">
-                If you're connected, our servers might be temporarily unavailable.
+                If you&apos;re connected, our servers might be temporarily unavailable.
               </p>
             </div>
           ) : (

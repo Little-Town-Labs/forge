@@ -1,7 +1,7 @@
 import { Message, streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { getContext } from "@/utils/context";
-import { verifyAuthentication, StreamingErrors, handleAsyncError } from "@/utils/apiResponse";
+import { verifyAuthentication, StreamingErrors } from "@/utils/apiResponse";
 
 export async function POST(req: Request) {
   // Verify authentication
@@ -13,7 +13,8 @@ export async function POST(req: Request) {
       : StreamingErrors.unauthorized("Please sign in to access the chat");
   }
   
-  const userId = authResult.userId!;
+  // Authentication successful - userId available for future use
+  // const userId = authResult.userId!;
 
   try {
     const { messages } = await req.json();

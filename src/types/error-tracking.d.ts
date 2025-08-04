@@ -4,22 +4,39 @@
  * various error tracking and analytics services that may be available.
  */
 
+interface SentryOptions {
+  contexts?: Record<string, Record<string, unknown>>;
+}
+
+interface SentryScope {
+  setUser: (user: { id: string; [key: string]: unknown }) => void;
+  setContext: (key: string, context: Record<string, unknown>) => void;
+  setTag: (key: string, value: string) => void;
+  setLevel: (level: 'fatal' | 'error' | 'warning' | 'info' | 'debug') => void;
+}
+
+interface BugsnagEvent {
+  context?: string;
+  severity?: string;
+  addMetadata: (section: string, data: Record<string, unknown>) => void;
+}
+
 interface Window {
   // Sentry error tracking
   Sentry?: {
-    captureException: (error: Error, options?: any) => void;
-    withScope: (callback: (scope: any) => void) => void;
+    captureException: (error: Error, options?: SentryOptions) => void;
+    withScope: (callback: (scope: SentryScope) => void) => void;
   };
 
   // Bugsnag error tracking
   Bugsnag?: {
-    notify: (error: Error, callback?: (event: any) => void) => void;
+    notify: (error: Error, callback?: (event: BugsnagEvent) => void) => void;
   };
 
   // LogRocket session replay and error tracking
   LogRocket?: {
     captureException: (error: Error) => void;
-    track: (eventName: string, properties?: Record<string, any>) => void;
+    track: (eventName: string, properties?: Record<string, unknown>) => void;
   };
 
   // Google Analytics (gtag)
@@ -29,43 +46,43 @@ interface Window {
     parameters: {
       description?: string;
       fatal?: boolean;
-      custom_map?: Record<string, any>;
+      custom_map?: Record<string, string>;
     }
   ) => void;
 
   // PostHog analytics
   posthog?: {
-    capture: (eventName: string, properties?: Record<string, any>) => void;
+    capture: (eventName: string, properties?: Record<string, unknown>) => void;
   };
 
   // Mixpanel analytics
   mixpanel?: {
-    track: (eventName: string, properties?: Record<string, any>) => void;
+    track: (eventName: string, properties?: Record<string, unknown>) => void;
   };
 
   // Amplitude analytics
   amplitude?: {
     getInstance: () => {
-      logEvent: (eventName: string, properties?: Record<string, any>) => void;
+      logEvent: (eventName: string, properties?: Record<string, unknown>) => void;
     };
   };
 
   // Rollbar error tracking
   Rollbar?: {
-    error: (error: Error, extra?: Record<string, any>) => void;
+    error: (error: Error, extra?: Record<string, unknown>) => void;
   };
 
   // Raygun error tracking
-  rg4js?: (eventName: string, error: Error, customData?: Record<string, any>) => void;
+  rg4js?: (eventName: string, error: Error, customData?: Record<string, unknown>) => void;
 
   // Datadog RUM
   DD_RUM?: {
-    addError: (error: Error, context?: Record<string, any>) => void;
+    addError: (error: Error, context?: Record<string, unknown>) => void;
   };
 
   // New Relic
   newrelic?: {
-    noticeError: (error: Error, customAttributes?: Record<string, any>) => void;
+    noticeError: (error: Error, customAttributes?: Record<string, unknown>) => void;
   };
 }
 
@@ -81,7 +98,7 @@ export interface ErrorTrackingData {
   environment: string;
   errorType: 'authentication' | 'network' | 'application' | 'clerk-authentication';
   severity: 'low' | 'medium' | 'high' | 'critical';
-  tags: Record<string, any>;
+  tags: Record<string, string | number | boolean>;
   user?: {
     isSignedIn?: boolean;
     hasAuth?: boolean;
@@ -98,13 +115,8 @@ export interface ErrorInfo {
   componentStack: string;
 }
 
-// Sentry scope interface
-export interface SentryScope {
-  setUser: (user: { id: string; [key: string]: any }) => void;
-  setContext: (key: string, context: Record<string, any>) => void;
-  setTag: (key: string, value: string) => void;
-  setLevel: (level: 'fatal' | 'error' | 'warning' | 'info' | 'debug') => void;
-}
+// Export the SentryScope interface for external use
+export type { SentryScope };
 
 // Configuration for error tracking
 export interface ErrorTrackingConfig {

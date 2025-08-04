@@ -79,7 +79,7 @@ function reportToSentry(error: Error, data: ErrorTrackingData, errorInfo?: Error
     scope.setLevel(sentryLevel);
     
     // Additional contexts
-    const contexts: Record<string, any> = {};
+    const contexts: Record<string, Record<string, unknown>> = {};
     
     if (errorInfo) {
       contexts.react = {

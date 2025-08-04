@@ -40,7 +40,7 @@ const CrawlForm: React.FC<CrawlFormProps> = ({ onCrawlComplete }) => {
       } else {
         setResult({ success: false, message: data.error || "Failed to crawl website" });
       }
-    } catch (error) {
+    } catch {
       setResult({ success: false, message: "An error occurred while crawling" });
     } finally {
       setIsLoading(false);

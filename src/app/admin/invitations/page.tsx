@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { SignedIn, useUser } from "@clerk/nextjs";
+import { SignedIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import AdminGuard from "@/components/AdminGuard";
 import Header from "@/components/Header";

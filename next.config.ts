@@ -37,6 +37,18 @@ const nextConfig: NextConfig = {
   // Production optimizations
   poweredByHeader: false,
   reactStrictMode: true,
+  
+  // ESLint configuration for deployment
+  eslint: {
+    // Allow production builds to successfully complete even if ESLint has warnings
+    ignoreDuringBuilds: false,
+  },
+  
+  // TypeScript configuration
+  typescript: {
+    // Allow production builds to successfully complete even if TypeScript has errors
+    ignoreBuildErrors: false,
+  },
 };
 
 export default nextConfig;

@@ -1,5 +1,5 @@
 import { getEmbeddings } from './embeddings';
-import { Metadata, ScoredVector } from '@/types';
+import { ScoredVector } from '@/types';
 import { Pinecone } from '@pinecone-database/pinecone';
 
 const getMatchesFromEmbeddings = async (embeddings: number[], topK: number, namespace: string): Promise<ScoredVector[]> => {

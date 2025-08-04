@@ -11,7 +11,8 @@ export async function POST(req: Request) {
       return authResult.response!;
     }
     
-    const userId = authResult.userId!;
+    // Authentication successful - userId available for future use
+    // const userId = authResult.userId!;
 
     // Validate request body
     const bodyResult = await validateRequestBody<{ url: string; options?: object }>(req, ['url']);
