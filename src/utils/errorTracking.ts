@@ -53,7 +53,8 @@ function sanitizeErrorData(data: ErrorTrackingData): ErrorTrackingData {
 function reportToSentry(error: Error, data: ErrorTrackingData, errorInfo?: ErrorInfo): void {
   if (!window.Sentry || !defaultConfig.enableSentry) return;
   
-  window.Sentry.withScope((scope) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  window.Sentry.withScope((scope: any) => {
     // Set user context (privacy-safe)
     scope.setUser({
       id: data.user?.isSignedIn ? 'authenticated-user' : 'anonymous-user',
@@ -92,7 +93,7 @@ function reportToSentry(error: Error, data: ErrorTrackingData, errorInfo?: Error
     }
     
     // Capture the error
-    window.Sentry.captureException(error, { contexts });
+    window.Sentry?.captureException(error, { contexts });
   });
 }
 
@@ -102,7 +103,8 @@ function reportToSentry(error: Error, data: ErrorTrackingData, errorInfo?: Error
 function reportToBugsnag(error: Error, data: ErrorTrackingData, errorInfo?: ErrorInfo): void {
   if (!window.Bugsnag || !defaultConfig.enableBugsnag) return;
   
-  window.Bugsnag.notify(error, (event) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  window.Bugsnag.notify(error, (event: any) => {
     event.context = `${data.tags.boundary}-${data.tags.component}`;
     event.severity = data.severity === 'critical' ? 'error' : 
                     data.severity === 'high' ? 'error' :
@@ -147,8 +149,8 @@ function reportToAnalytics(error: Error, data: ErrorTrackingData): void {
       fatal: data.severity === 'critical',
       custom_map: {
         error_type: data.errorType,
-        error_boundary: data.tags.boundary,
-        component: data.tags.component,
+        error_boundary: String(data.tags.boundary),
+        component: String(data.tags.component),
       }
     });
   }
@@ -197,7 +199,7 @@ function logToConsole(error: Error, data: ErrorTrackingData, errorInfo?: ErrorIn
                data.severity === 'high' ? '⚠️' : 
                data.severity === 'medium' ? '⚠️' : 'ℹ️';
   
-  console.group(`${emoji} ${data.tags.boundary.toUpperCase()} Error`);
+  console.group(`${emoji} ${String(data.tags.boundary).toUpperCase()} Error`);
   console.error('Error:', error);
   if (errorInfo) {
     console.error('Error Info:', errorInfo);
@@ -308,9 +310,9 @@ export function trackNetworkError(
       boundary: context.boundary || 'network',
       component: 'api',
       recoverable: true,
-      endpoint: context.endpoint,
-      method: context.method,
-      statusCode: context.statusCode?.toString(),
+      endpoint: context.endpoint || 'unknown',
+      method: context.method || 'unknown',
+      statusCode: context.statusCode?.toString() || 'unknown',
     },
   });
 }

@@ -345,9 +345,9 @@ export function handleClerkServiceError(
       errorObj.code === 'ETIMEDOUT' ||
       errorObj.code === 'ENOTFOUND' ||
       errorObj.name === 'TimeoutError' ||
-      errorObj.message?.includes('timeout') ||
-      errorObj.message?.includes('network') ||
-      errorObj.message?.includes('connection')
+      (typeof errorObj.message === 'string' && errorObj.message.includes('timeout')) ||
+      (typeof errorObj.message === 'string' && errorObj.message.includes('network')) ||
+      (typeof errorObj.message === 'string' && errorObj.message.includes('connection'))
     ) {
       return createErrorResponse(
         "User management service temporarily unavailable. Please try again later.",

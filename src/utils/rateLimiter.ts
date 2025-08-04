@@ -155,8 +155,7 @@ async function getRedisClient(): Promise<RedisClientType | null> {
     redisClient = createClient({
       url: redisUrl,
       socket: {
-        connectTimeout: 5000,
-        lazyConnect: true
+        connectTimeout: 5000
       }
     });
     
@@ -204,7 +203,7 @@ async function checkRateLimitRedis(userId: string): Promise<RateLimitResult> {
     pipeline.incr(hourKey);
     pipeline.expire(hourKey, Math.ceil(HOURLY_WINDOW_MS / 1000));
     
-    const results = await pipeline.exec() as [null, number][];
+    const results = await pipeline.exec() as unknown as [null, number][];
     const minuteCount = results[0][1];
     const hourlyCount = results[2][1];
     

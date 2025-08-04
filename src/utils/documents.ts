@@ -17,7 +17,8 @@ export async function prepareDocument(page: Page, splitter: DocumentSplitter): P
   }));
 }
 
-export async function chunkedUpsert(index: { upsert: (request: { vectors: VectorDocument[], namespace: string }) => Promise<unknown> }, vectors: VectorDocument[], namespace: string, batchSize: number) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function chunkedUpsert(index: any, vectors: VectorDocument[], namespace: string, batchSize: number) {
   for (let i = 0; i < vectors.length; i += batchSize) {
     const batch = vectors.slice(i, i + batchSize);
     await index.namespace(namespace).upsert(batch);

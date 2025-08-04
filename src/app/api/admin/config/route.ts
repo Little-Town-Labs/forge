@@ -38,7 +38,7 @@ export async function GET() {
       validation: validationStatus,
       environment: {
         nodeEnv: process.env.NODE_ENV,
-        nextjsVersion: process.env.npm_package_dependencies?.next || "unknown",
+        nextjsVersion: "15.4.4", // Hardcoded for now
         nodeVersion: process.version,
         platform: process.platform,
         uptime: process.uptime()

@@ -17,7 +17,8 @@
       "Bash(npx tailwindcss init:*)",
       "Bash(npx next:*)",
       "Bash(cp:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }

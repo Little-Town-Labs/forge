@@ -21,7 +21,7 @@ interface BugsnagEvent {
   addMetadata: (section: string, data: Record<string, unknown>) => void;
 }
 
-interface Window {
+export interface WindowErrorTracking {
   // Sentry error tracking
   Sentry?: {
     captureException: (error: Error, options?: SentryOptions) => void;
@@ -112,7 +112,7 @@ export interface ErrorTrackingData {
 
 // React Error Boundary types
 export interface ErrorInfo {
-  componentStack: string;
+  componentStack?: string | null;
 }
 
 // Export the SentryScope interface for external use
@@ -132,16 +132,23 @@ export interface ErrorTrackingConfig {
 declare global {
   interface Window {
     // Make error tracking services optional on the global window
-    Sentry?: Window['Sentry'];
-    Bugsnag?: Window['Bugsnag'];
-    LogRocket?: Window['LogRocket'];
-    gtag?: Window['gtag'];
-    posthog?: Window['posthog'];
-    mixpanel?: Window['mixpanel'];
-    amplitude?: Window['amplitude'];
-    Rollbar?: Window['Rollbar'];
-    rg4js?: Window['rg4js'];
-    DD_RUM?: Window['DD_RUM'];
-    newrelic?: Window['newrelic'];
+    Sentry?: WindowErrorTracking['Sentry'];
+    Bugsnag?: WindowErrorTracking['Bugsnag'];
+    LogRocket?: WindowErrorTracking['LogRocket'];
+    gtag?: WindowErrorTracking['gtag'];
+    posthog?: WindowErrorTracking['posthog'];
+    mixpanel?: WindowErrorTracking['mixpanel'];
+    amplitude?: WindowErrorTracking['amplitude'];
+    Rollbar?: WindowErrorTracking['Rollbar'];
+    rg4js?: WindowErrorTracking['rg4js'];
+    DD_RUM?: WindowErrorTracking['DD_RUM'];
+    newrelic?: WindowErrorTracking['newrelic'];
+    
+    // Clerk authentication
+    Clerk?: {
+      loaded?: boolean;
+      user?: unknown;
+      session?: unknown;
+    };
   }
 }

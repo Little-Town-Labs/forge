@@ -192,7 +192,7 @@ export async function GET(req: Request) {
       invitationList = await clerk.invitations.getInvitationList({
         limit,
         offset,
-        status: ['pending'], // Only get pending invitations
+        status: 'pending', // Only get pending invitations
       });
     } catch (clerkError) {
       // Handle Clerk service errors

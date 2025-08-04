@@ -8,9 +8,9 @@ const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
 
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     invitationId: string;
-  };
+  }>;
 }
 
 /**
@@ -37,7 +37,7 @@ export async function GET(req: Request, { params }: RouteParams) {
       return createErrorResponse("Admin privileges required", ErrorCodes.FORBIDDEN, HttpStatus.FORBIDDEN);
     }
 
-    const { invitationId } = params;
+    const { invitationId } = await params;
 
     if (!invitationId) {
       return createErrorResponse("Invitation ID is required", ErrorCodes.MISSING_REQUIRED_FIELD, HttpStatus.BAD_REQUEST);
@@ -122,7 +122,7 @@ export async function DELETE(req: Request, { params }: RouteParams) {
       return createErrorResponse("Admin privileges required", ErrorCodes.FORBIDDEN, HttpStatus.FORBIDDEN);
     }
 
-    const { invitationId } = params;
+    const { invitationId } = await params;
 
     if (!invitationId) {
       return createErrorResponse("Invitation ID is required", ErrorCodes.MISSING_REQUIRED_FIELD, HttpStatus.BAD_REQUEST);
