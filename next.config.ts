@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Performance optimizations
-  swcMinify: true,
   compress: true,
   
   // Image optimization
@@ -11,7 +10,6 @@ const nextConfig: NextConfig = {
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
   },
-  
   
   // Environment validation
   env: {
@@ -22,13 +20,16 @@ const nextConfig: NextConfig = {
   
   // Experimental features for better performance
   experimental: {
-    optimizeCss: true,
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+    // optimizeCss: true, // Disabled temporarily due to lightningcss WSL compatibility issue
+    optimizePackageImports: ['lucide-react', '@clerk/nextjs'],
+  },
+  
+  // Turbopack configuration (moved from experimental)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
     },
   },
@@ -36,7 +37,6 @@ const nextConfig: NextConfig = {
   // Production optimizations
   poweredByHeader: false,
   reactStrictMode: true,
-  
 };
 
 export default nextConfig;
