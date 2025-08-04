@@ -1,36 +1,163 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Forge
+
+**FORGE - Framework Operations & Resource Guidance Engine**
+
+A Next.js chatbot application built with the Vercel AI SDK and context-aware responses.
+
+## Features
+
+- Real-time chat interface with streaming responses
+- Context-aware responses using semantic search
+- Web crawling and knowledge base seeding (Pinecone integration ready)
+- Modern, responsive design with dark mode support
+- Context panel showing relevant sources
+- Admin interface for adding knowledge base content
+- Demo context system for testing
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- OpenAI API key
+- Pinecone API key and index (optional for full functionality)
+
+### Installation
+
+1. Install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Set up environment variables:
+Create a `.env.local` file in the root directory and add your API keys:
+```
+OPENAI_API_KEY=your_openai_api_key_here
+# Optional for full functionality:
+PINECONE_API_KEY=your_pinecone_api_key_here
+PINECONE_INDEX=your_pinecone_index_name
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Run the development server:
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Learn More
+## Usage
 
-To learn more about Next.js, take a look at the following resources:
+### Demo Mode (Default)
+- The chatbot works immediately with demo context
+- Context panel shows sample relevant sources
+- Perfect for testing the interface and functionality
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Full Knowledge Base Mode
+1. Set up Pinecone API key and index name in `.env.local`
+2. Click the "Add Knowledge Base" button on the main page
+3. Enter a website URL you want to crawl
+4. Click "Crawl Website" to index the content
+5. The chatbot will now use this content for context-aware responses
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Chatting with Context
 
-## Deploy on Vercel
+- The chatbot automatically retrieves relevant context for your questions
+- The context panel shows the sources being used with relevance scores
+- Responses are based on both the indexed content and general knowledge
+- Context is displayed in a clean, scrollable panel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/components/` - React components for the chat interface
+- `src/app/api/` - API routes for chat, context, and crawling
+- `src/utils/` - Utility functions for crawling, embeddings, and context
+- `src/types/` - TypeScript type definitions
+
+## Technologies Used
+
+- Next.js 15
+- React 19
+- Vercel AI SDK
+- OpenAI Embeddings
+- Pinecone Vector Database (optional)
+- Tailwind CSS
+- TypeScript
+
+## API Endpoints
+
+- `/api/chat` - Main chat endpoint with context-aware responses
+- `/api/context` - Retrieve relevant context for queries
+- `/api/crawl` - Crawl and index website content
+
+## Current Implementation Status
+
+### ✅ Completed
+- Context-aware chat interface
+- Context panel with source display
+- Web crawling infrastructure
+- Embeddings generation
+- Demo context system
+- Admin interface for knowledge base management
+- **Full Pinecone integration**
+
+### 🔄 Ready for Enhancement
+- Advanced context retrieval algorithms
+- Multi-modal support
+- User authentication
+
+## Next Steps
+
+This is Step 3 of the Forge development. The next steps will include:
+- Advanced conversation features and memory
+- Multi-modal support (images, documents)
+- Enhanced context retrieval algorithms
+- User authentication and personalization
+- Performance optimizations and scaling
+
+## Troubleshooting
+
+### Context Not Loading
+- Check that your OpenAI API key is set correctly
+- If using Pinecone, ensure your API key and index name are configured
+- The demo context will show if Pinecone is not configured
+
+### Crawling Issues
+- Ensure the website URL is accessible
+- Check browser console for any error messages
+- Verify that the website allows web scraping
+
+### Pinecone Setup Issues
+
+#### Common Error: "PineconeNotFoundError" or "404"
+This error occurs when the Pinecone index doesn't exist. The application will automatically create the index if it doesn't exist, but you need to ensure:
+
+1. **Valid API Key**: Check that your `PINECONE_API_KEY` is correct
+   ```bash
+   # In your .env.local file
+   PINECONE_API_KEY=your_actual_pinecone_api_key_here
+   ```
+
+2. **Index Name**: Ensure your `PINECONE_INDEX` name is valid (alphanumeric, no spaces)
+   ```bash
+   # In your .env.local file
+   PINECONE_INDEX=my-knowledge-base
+   ```
+
+3. **Permissions**: Make sure your Pinecone account has permission to create indexes
+
+#### Environment Variables Setup
+Create a `.env.local` file in the `forge` directory with:
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+PINECONE_API_KEY=your_pinecone_api_key_here
+PINECONE_INDEX=your_index_name_here
+```
+
+#### Testing Pinecone Connection
+1. Visit [Pinecone Console](https://app.pinecone.io/)
+2. Verify your API key is active
+3. Check if you have permission to create indexes
+4. Try creating a test index manually in the console
+
+#### Demo Mode
+If Pinecone is not configured or there are issues, the application will automatically fall back to demo mode, showing sample context data.
