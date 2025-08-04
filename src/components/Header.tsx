@@ -52,12 +52,32 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                 onClick={handleAdminClick}
                 className="flex items-center px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 title="Admin Dashboard"
+                data-testid="admin-button"
               >
                 <Settings className="w-4 h-4 mr-1" />
                 <span className="text-sm font-medium">Admin</span>
               </button>
             )}
-            <UserButton afterSignOutUrl="/" />
+            
+            {/* User Menu with enhanced styling */}
+            <div className="flex items-center space-x-3">
+              {user && (
+                <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                  {user.firstName || user.emailAddresses?.[0]?.emailAddress}
+                </span>
+              )}
+              <div data-testid="user-menu">
+                <UserButton 
+                  afterSignOutUrl="/" 
+                  appearance={{
+                    elements: {
+                      userButtonAvatarBox: "w-8 h-8 ring-2 ring-gray-200 dark:ring-gray-600",
+                      userButtonPopoverCard: "shadow-lg border border-gray-200 dark:border-gray-700",
+                    }
+                  }}
+                />
+              </div>
+            </div>
           </SignedIn>
           <SignedOut>
             <SignInButton mode="modal">
