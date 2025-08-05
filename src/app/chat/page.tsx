@@ -12,8 +12,15 @@ const ChatPage: React.FC = () => {
   const [isLoadingContext, setIsLoadingContext] = useState(false);
   const [showCrawlForm, setShowCrawlForm] = useState(false);
   const [gotMessages, setGotMessages] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<"openai" | "google">("openai");
   const prevMessagesLengthRef = useRef(0);
-  const { messages, input, handleInputChange, handleSubmit } = useChat();
+  
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
+    api: "/api/chat",
+    body: {
+      model: selectedModel,
+    },
+  });
 
   // Get context when messages change
   useEffect(() => {
@@ -62,6 +69,39 @@ const ChatPage: React.FC = () => {
       <Header className="py-8 px-4" />
       <div className="flex-1 container mx-auto px-4 pb-8">
         <div className="max-w-6xl mx-auto space-y-6">
+          {/* Model Selector */}
+          <div className="flex justify-center">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                AI Model
+              </label>
+              <div className="flex space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="model"
+                    value="openai"
+                    checked={selectedModel === "openai"}
+                    onChange={(e) => setSelectedModel(e.target.value as "openai" | "google")}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">OpenAI (GPT-4o-mini)</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="model"
+                    value="google"
+                    checked={selectedModel === "google"}
+                    onChange={(e) => setSelectedModel(e.target.value as "openai" | "google")}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Google (Gemini 1.5 Flash)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
           {/* Crawl Form Toggle */}
           <div className="flex justify-center">
             <button

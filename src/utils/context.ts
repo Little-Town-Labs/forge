@@ -1,4 +1,4 @@
-import { getEmbeddings } from './embeddings';
+import { getEmbeddings, EmbeddingProvider } from './embeddings';
 import { ScoredVector } from '@/types';
 import { Pinecone } from '@pinecone-database/pinecone';
 
@@ -95,11 +95,12 @@ export const getContext = async (
   namespace: string = 'default',
   maxTokens = 3000,
   minScore = 0.3,
-  getOnlyText = true
+  getOnlyText = true,
+  embeddingProvider: EmbeddingProvider = 'openai'
 ): Promise<string | ScoredVector[]> => {
   try {
-    // Get the embeddings of the input message
-    const embedding = await getEmbeddings(message);
+    // Get the embeddings of the input message using the selected provider
+    const embedding = await getEmbeddings(message, embeddingProvider);
 
     // Retrieve the matches for the embeddings from the specified namespace
     const matches = await getMatchesFromEmbeddings(embedding, 3, namespace);

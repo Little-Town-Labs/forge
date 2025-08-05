@@ -2,10 +2,17 @@ import { Pinecone } from '@pinecone-database/pinecone';
 import { Crawler } from './crawler';
 import { RecursiveCharacterTextSplitter, MarkdownTextSplitter } from 'langchain/text_splitter';
 import { prepareDocument, chunkedUpsert, DocumentSplitter } from './documents';
-import { embedDocument } from './embeddings';
+import { embedDocument, getEmbeddingDimensions, EmbeddingProvider } from './embeddings';
 import { Page, SeedOptions } from '@/types';
 
-export async function seed(url: string, limit: number, indexName: string, options: SeedOptions, namespace: string = 'default') {
+export async function seed(
+  url: string, 
+  limit: number, 
+  indexName: string, 
+  options: SeedOptions, 
+  namespace: string = 'default',
+  embeddingProvider: EmbeddingProvider = 'openai'
+) {
   try {
     // Check if Pinecone is configured
     if (!process.env.PINECONE_API_KEY) {
@@ -33,6 +40,9 @@ export async function seed(url: string, limit: number, indexName: string, option
     // Prepare documents by splitting the pages
     const documents = await Promise.all(pages.map(page => prepareDocument(page, splitter)));
 
+    // Get the embedding dimensions for the selected provider
+    const embeddingDimensions = getEmbeddingDimensions(embeddingProvider);
+
     // Check if index exists and create it if it doesn't
     let indexExists = false;
     try {
@@ -41,11 +51,11 @@ export async function seed(url: string, limit: number, indexName: string, option
       indexExists = true;
     } catch (describeError) {
       // Index doesn't exist, create it
-      console.log(`Creating Pinecone index: ${indexName}`);
+      console.log(`Creating Pinecone index: ${indexName} with ${embeddingDimensions} dimensions`);
       try {
         await pinecone.createIndex({
           name: indexName,
-          dimension: 1024,
+          dimension: embeddingDimensions,
           metric: 'cosine',
           spec: {
             serverless: {
@@ -68,13 +78,13 @@ export async function seed(url: string, limit: number, indexName: string, option
     // Get the index
     const index = pinecone.Index(indexName);
 
-    // Get the vector embeddings for the documents
-    const vectors = await Promise.all(documents.flat().map(embedDocument));
+    // Get the vector embeddings for the documents using the selected provider
+    const vectors = await Promise.all(documents.flat().map(doc => embedDocument(doc, embeddingProvider)));
 
     // Upsert vectors into the Pinecone index with the specified namespace
     await chunkedUpsert(index, vectors, namespace, 10);
 
-    console.log(`Successfully indexed ${vectors.length} vectors in namespace: ${namespace}`);
+    console.log(`Successfully indexed ${vectors.length} vectors in namespace: ${namespace} using ${embeddingProvider} embeddings`);
     
     // Return the first document
     return documents[0];

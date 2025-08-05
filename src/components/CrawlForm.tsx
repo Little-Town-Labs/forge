@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { EmbeddingProvider } from "@/utils/embeddings";
 
 interface CrawlFormProps {
   onCrawlComplete?: () => void;
@@ -6,6 +7,7 @@ interface CrawlFormProps {
 
 const CrawlForm: React.FC<CrawlFormProps> = ({ onCrawlComplete }) => {
   const [url, setUrl] = useState("");
+  const [embeddingProvider, setEmbeddingProvider] = useState<EmbeddingProvider>("openai");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
 
@@ -24,6 +26,7 @@ const CrawlForm: React.FC<CrawlFormProps> = ({ onCrawlComplete }) => {
         },
         body: JSON.stringify({
           url,
+          embeddingProvider,
           options: {
             splittingMethod: "recursive",
             chunkSize: 1000,
@@ -67,6 +70,36 @@ const CrawlForm: React.FC<CrawlFormProps> = ({ onCrawlComplete }) => {
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             required
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Embedding Provider
+          </label>
+          <div className="flex space-x-4">
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="embeddingProvider"
+                value="openai"
+                checked={embeddingProvider === "openai"}
+                onChange={(e) => setEmbeddingProvider(e.target.value as EmbeddingProvider)}
+                className="mr-2"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">OpenAI (1024 dim)</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="embeddingProvider"
+                value="google"
+                checked={embeddingProvider === "google"}
+                onChange={(e) => setEmbeddingProvider(e.target.value as EmbeddingProvider)}
+                className="mr-2"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Google (768 dim)</span>
+            </label>
+          </div>
         </div>
         
         <button

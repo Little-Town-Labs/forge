@@ -1,7 +1,9 @@
 import { Message, streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
 import { getContext } from "@/utils/context";
 import { verifyAuthentication, StreamingErrors } from "@/utils/apiResponse";
+import { EmbeddingProvider } from "@/utils/embeddings";
 
 export async function POST(req: Request) {
   // Verify authentication
@@ -17,13 +19,16 @@ export async function POST(req: Request) {
   // const userId = authResult.userId!;
 
   try {
-    const { messages } = await req.json();
+    const { messages, model = "openai" } = await req.json();
 
     // Get the last message
     const lastMessage = messages[messages.length - 1];
 
-    // Get the context from the last message
-    const context = await getContext(lastMessage.content, 'default');
+    // Determine embedding provider based on the selected model
+    const embeddingProvider: EmbeddingProvider = model === "google" ? "google" : "openai";
+
+    // Get the context from the last message using the appropriate embedding provider
+    const context = await getContext(lastMessage.content, 'default', 3000, 0.3, true, embeddingProvider);
 
     const prompt = [
       {
@@ -45,9 +50,9 @@ export async function POST(req: Request) {
       },
     ];
 
-    // Ask OpenAI for a streaming chat completion given the prompt
+    // Ask AI for a streaming chat completion given the prompt
     const response = await streamText({
-      model: openai("gpt-4o-mini"),
+      model: (model === "google" ? google("gemini-1.5-flash") : openai("gpt-4o-mini")) as any,
       messages: [
         ...prompt,
         ...messages.filter((message: Message) => message.role === "user"),

@@ -55,6 +55,15 @@ The heart of the application. Key functions:
 - **Messages.tsx** - Message display with streaming support
 - **ContextPanel.tsx** - Shows relevant sources with relevance scores
 - **CrawlForm.tsx** - Admin interface for adding knowledge base content
+- **ClerkProvider.tsx** - Authentication provider with error boundaries
+- **Header.tsx** - Navigation with enhanced user menu visibility
+
+### Loading Components (`src/app/*/loading.tsx`)
+All loading components include comprehensive accessibility features:
+- **ARIA Attributes**: `aria-live`, `aria-atomic`, `role="status"`
+- **Screen Reader Support**: Dynamic announcements and semantic markup
+- **Progressive Loading**: Multi-phase loading with status updates
+- **Timeout Handling**: Graceful timeout messages with retry options
 
 ### Utilities (`src/utils/`)
 - **embeddings.ts** - OpenAI embedding generation
@@ -64,6 +73,8 @@ The heart of the application. Key functions:
 - **admin.ts** - Admin utility functions and validation
 - **startup.ts** - Application startup validation and health checks
 - **rateLimiter.ts** - Distributed rate limiting with Redis/memory/disabled modes
+- **errorTracking.ts** - Centralized error tracking with privacy controls
+- **apiResponse.ts** - Standardized API response utilities with error handling
 
 ## Key Dependencies
 - **Vercel AI SDK** (`ai`) - Streaming chat responses
@@ -212,6 +223,52 @@ CLERK_SECRET_KEY=sk_live_...  # Required for Backend SDK
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...  # Required for frontend
 ```
 
+## Error Tracking System
+
+**Forge** includes a comprehensive error tracking system with privacy controls:
+
+### Centralized Error Tracking (`src/utils/errorTracking.ts`)
+- **Privacy-First**: Sanitizes sensitive data in production
+- **Multi-Service Support**: Sentry, Bugsnag, LogRocket, Google Analytics, PostHog, etc.
+- **Structured Logging**: Consistent error data format across services
+- **Environment Aware**: Different privacy levels for development vs production
+
+### Error Tracking Services
+Supports integration with multiple services (configured via window globals):
+- **Sentry**: `window.Sentry` - Production error tracking
+- **Bugsnag**: `window.Bugsnag` - Error monitoring with context
+- **LogRocket**: `window.LogRocket` - Session replay with error capture
+- **Analytics**: Google Analytics, PostHog, Mixpanel for error events
+
+### Usage Examples
+```typescript
+// Track application errors
+trackError(error, {
+  errorType: 'application',
+  severity: 'high',
+  tags: { boundary: 'chat', component: 'MessageForm' }
+});
+
+// Track authentication errors  
+trackAuthError(error, {
+  errorBoundary: 'ClerkProvider',
+  isSignedIn: false
+});
+
+// Track network errors
+trackNetworkError(error, {
+  endpoint: '/api/chat',
+  method: 'POST',
+  statusCode: 500
+});
+```
+
+### Privacy Controls
+- **Production Mode**: Limits stack traces, removes query parameters, masks user data
+- **Development Mode**: Full error details for debugging
+- **Data Sanitization**: Automatic removal of sensitive information
+- **User Context**: Privacy-safe user identification (authenticated/anonymous)
+
 ## Common Issues & Solutions
 
 ### Environment Variables
@@ -231,3 +288,42 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...  # Required for frontend
 - **Issue**: Application exits with configuration errors
 - **Solution**: Check console output for specific issues and fix environment variables
 - **Debug**: Use `/api/health` endpoint to check current validation status
+
+### Deployment Issues
+
+#### TypeScript Compilation Errors
+- **Issue**: Next.js 15 App Router route parameter types causing build failures
+- **Solution**: Dynamic routes must use `Promise<{ param: string }>` interface and `await params`
+- **Example**: `{ params }: { params: Promise<{ invitationId: string }> }`
+
+#### ESLint Build Failures
+Common ESLint errors that block Vercel deployment:
+
+1. **Unescaped Apostrophes in JSX**
+   - **Error**: `'` characters in JSX strings
+   - **Fix**: Replace with `&apos;` or use proper escaping
+
+2. **TypeScript `any` Type Violations**
+   - **Error**: `@typescript-eslint/no-explicit-any`
+   - **Fix**: Use specific types or add `// eslint-disable-next-line @typescript-eslint/no-explicit-any`
+
+3. **Unused Variables/Imports**
+   - **Error**: `@typescript-eslint/no-unused-vars`
+   - **Fix**: Remove unused code or comment out with `// const userId = authResult.userId!;`
+
+4. **Type Assertions and Message Properties**
+   - **Error**: `Property 'includes' does not exist on type '{}'`
+   - **Fix**: Use type guards: `(typeof obj.message === 'string' && obj.message.includes('text'))`
+
+#### Lock File Conflicts
+- **Issue**: Multiple `package-lock.json` files causing warnings
+- **Solution**: Keep only the project-level lockfile, remove parent directory lockfiles
+- **Command**: `rm /parent/directory/package-lock.json`
+
+### Build Validation
+Before deploying, ensure these commands pass:
+```bash
+npm run build    # Must complete successfully
+npm run lint     # Should have minimal warnings only
+npx tsc --noEmit # Check for TypeScript errors
+```

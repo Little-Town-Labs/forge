@@ -72,7 +72,7 @@ function validateEnvironment(): ValidationResult {
   
   // Check required environment variables
   const requiredVars = ['OPENAI_API_KEY'];
-  const optionalVars = ['PINECONE_API_KEY', 'PINECONE_INDEX'];
+  const optionalVars = ['PINECONE_API_KEY', 'PINECONE_INDEX', 'GOOGLE_AI_API_KEY'];
   const authVars = ['NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', 'CLERK_SECRET_KEY'];
   
   // Check required variables

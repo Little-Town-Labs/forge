@@ -1,5 +1,6 @@
 import { seed } from "@/utils/seed";
 import { SeedOptions } from "@/types";
+import { EmbeddingProvider } from "@/utils/embeddings";
 import { verifyAuthentication, createSuccessResponse, CommonErrors, validateRequestBody } from "@/utils/apiResponse";
 
 export const runtime = "nodejs";
@@ -16,12 +17,16 @@ export async function POST(req: Request) {
     // const userId = authResult.userId!;
 
     // Validate request body
-    const bodyResult = await validateRequestBody<{ url: string; options?: SeedOptions }>(req, ['url']);
+    const bodyResult = await validateRequestBody<{ 
+      url: string; 
+      options?: SeedOptions;
+      embeddingProvider?: EmbeddingProvider;
+    }>(req, ['url']);
     if (!bodyResult.success) {
       return bodyResult.response;
     }
     
-    const { url, options } = bodyResult.data;
+    const { url, options, embeddingProvider = 'openai' } = bodyResult.data;
     
     // Provide default options if not specified
     const seedOptions: SeedOptions = options || {
@@ -35,13 +40,14 @@ export async function POST(req: Request) {
     console.log("PINECONE_API_KEY exists:", !!process.env.PINECONE_API_KEY);
     console.log("PINECONE_INDEX exists:", !!process.env.PINECONE_INDEX);
     console.log("PINECONE_INDEX value:", process.env.PINECONE_INDEX);
+    console.log("Selected embedding provider:", embeddingProvider);
     
     // Check if Pinecone index is configured
     if (!process.env.PINECONE_INDEX) {
       return CommonErrors.configurationError("Pinecone index name is not configured. Please set PINECONE_INDEX in your .env.local file.");
     }
     
-    const documents = await seed(url, 1, process.env.PINECONE_INDEX, seedOptions, 'default');
+    const documents = await seed(url, 1, process.env.PINECONE_INDEX, seedOptions, 'default', embeddingProvider);
     return createSuccessResponse({ documents });
   } catch (error) {
     console.error("Crawl API error:", error);

@@ -48,6 +48,7 @@ export async function GET() {
         pineconeConfigured: !!(process.env.PINECONE_API_KEY && process.env.PINECONE_INDEX),
         clerkConfigured: !!(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY),
         openaiConfigured: !!process.env.OPENAI_API_KEY,
+        googleAiConfigured: !!process.env.GOOGLE_AI_API_KEY,
         adminConfigured: !!process.env.ADMIN_EMAILS
       },
       security: {

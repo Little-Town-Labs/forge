@@ -19,7 +19,8 @@ A Next.js chatbot application built with the Vercel AI SDK and context-aware res
 ### Prerequisites
 
 - Node.js 18+ 
-- OpenAI API key
+- OpenAI API key (required)
+- Google AI API key (optional - for Gemini models)
 - Pinecone API key and index (optional for full functionality)
 
 ### Installation
@@ -33,6 +34,8 @@ npm install
 Create a `.env.local` file in the root directory and add your API keys:
 ```
 OPENAI_API_KEY=your_openai_api_key_here
+# Optional - for Google Gemini models:
+GOOGLE_AI_API_KEY=your_google_ai_api_key_here
 # Optional for full functionality:
 PINECONE_API_KEY=your_pinecone_api_key_here
 PINECONE_INDEX=your_pinecone_index_name
@@ -59,6 +62,21 @@ npm run dev
 4. Click "Crawl Website" to index the content
 5. The chatbot will now use this content for context-aware responses
 
+### AI Model Selection
+
+- Choose between OpenAI (GPT-4o-mini) and Google (Gemini 1.5 Flash) models
+- Switch models using the radio buttons above the chat interface
+- Each model has different strengths and capabilities
+- Context-aware responses work with both models
+
+### Embedding Provider Selection
+
+- **OpenAI Embeddings**: 1024 dimensions, high quality semantic search
+- **Google Embeddings**: 768 dimensions, fast and cost-effective
+- Select embedding provider when crawling websites
+- Automatic fallback to OpenAI if Google embeddings fail
+- Different embedding providers can be used for crawling vs. chat
+
 ### Chatting with Context
 
 - The chatbot automatically retrieves relevant context for your questions
@@ -78,7 +96,8 @@ npm run dev
 - Next.js 15
 - React 19
 - Vercel AI SDK
-- OpenAI Embeddings
+- OpenAI & Google AI Models
+- OpenAI & Google Embeddings
 - Pinecone Vector Database (optional)
 - Tailwind CSS
 - TypeScript
