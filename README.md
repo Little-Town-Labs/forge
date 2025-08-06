@@ -6,6 +6,8 @@ A Next.js chatbot application built with the Vercel AI SDK and context-aware res
 
 ## Features
 
+- **Multi-Provider AI Support**: OpenAI and Google AI models with easy switching
+- **Multi-Provider Embeddings**: OpenAI and Google embeddings with automatic fallback
 - Real-time chat interface with streaming responses
 - Context-aware responses using semantic search
 - Web crawling and knowledge base seeding (Pinecone integration ready)
@@ -20,7 +22,7 @@ A Next.js chatbot application built with the Vercel AI SDK and context-aware res
 
 - Node.js 18+ 
 - OpenAI API key (required)
-- Google AI API key (optional - for Gemini models)
+- Google AI API key (optional - for Gemini models and embeddings)
 - Pinecone API key and index (optional for full functionality)
 
 ### Installation
@@ -34,7 +36,7 @@ npm install
 Create a `.env.local` file in the root directory and add your API keys:
 ```
 OPENAI_API_KEY=your_openai_api_key_here
-# Optional - for Google Gemini models:
+# Optional - for Google Gemini models and embeddings:
 GOOGLE_AI_API_KEY=your_google_ai_api_key_here
 # Optional for full functionality:
 PINECONE_API_KEY=your_pinecone_api_key_here
@@ -59,8 +61,9 @@ npm run dev
 1. Set up Pinecone API key and index name in `.env.local`
 2. Click the "Add Knowledge Base" button on the main page
 3. Enter a website URL you want to crawl
-4. Click "Crawl Website" to index the content
-5. The chatbot will now use this content for context-aware responses
+4. **Select embedding provider** (OpenAI or Google) for the crawl
+5. Click "Crawl Website" to index the content
+6. The chatbot will now use this content for context-aware responses
 
 ### AI Model Selection
 
@@ -68,6 +71,7 @@ npm run dev
 - Switch models using the radio buttons above the chat interface
 - Each model has different strengths and capabilities
 - Context-aware responses work with both models
+- **Automatic Matching**: Chat model selection determines embedding provider
 
 ### Embedding Provider Selection
 
@@ -75,7 +79,7 @@ npm run dev
 - **Google Embeddings**: 768 dimensions, fast and cost-effective
 - Select embedding provider when crawling websites
 - Automatic fallback to OpenAI if Google embeddings fail
-- Different embedding providers can be used for crawling vs. chat
+- **Smart Matching**: Google chat model uses Google embeddings, OpenAI uses OpenAI embeddings
 
 ### Chatting with Context
 
@@ -96,8 +100,8 @@ npm run dev
 - Next.js 15
 - React 19
 - Vercel AI SDK
-- OpenAI & Google AI Models
-- OpenAI & Google Embeddings
+- **Multi-Provider AI**: OpenAI & Google AI Models
+- **Multi-Provider Embeddings**: OpenAI & Google Embeddings
 - Pinecone Vector Database (optional)
 - Tailwind CSS
 - TypeScript
@@ -111,6 +115,8 @@ npm run dev
 ## Current Implementation Status
 
 ### ✅ Completed
+- **Multi-provider AI system** (OpenAI & Google)
+- **Multi-provider embeddings** (OpenAI & Google)
 - Context-aware chat interface
 - Context panel with source display
 - Web crawling infrastructure
@@ -123,6 +129,7 @@ npm run dev
 - Advanced context retrieval algorithms
 - Multi-modal support
 - User authentication
+- Additional AI providers (Anthropic, etc.)
 
 ## Next Steps
 

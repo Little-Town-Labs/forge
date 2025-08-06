@@ -52,6 +52,7 @@ export async function POST(req: Request) {
 
     // Ask AI for a streaming chat completion given the prompt
     const response = await streamText({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       model: (model === "google" ? google("gemini-1.5-flash") : openai("gpt-4o-mini")) as any,
       messages: [
         ...prompt,
