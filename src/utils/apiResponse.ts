@@ -282,8 +282,6 @@ export async function handleAsyncError<T>(
     return { success: true, data };
   } catch (error) {
     console.error(`${errorMessage}:`, error);
-    
-    const errorDetails = error instanceof Error ? error.message : 'Unknown error';
     return {
       success: false,
       response: createErrorResponse(
@@ -317,7 +315,7 @@ export async function validateRequestBody<T>(
     
     return { success: true, data: body };
     
-  } catch (error) {
+  } catch {
     return {
       success: false,
       response: createErrorResponse(

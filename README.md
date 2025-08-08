@@ -75,6 +75,10 @@ MAX_INVITATIONS_PER_HOUR=20
 MAX_CRAWL_PAGES=100
 MAX_CRAWL_DEPTH=3
 CRAWL_TIMEOUT_MS=600000
+
+# Optional - Emergency Admin Access (fallback mechanism)
+# Use only when normal admin detection fails due to service issues
+EMERGENCY_ADMIN_USER_IDS=user_abc123,user_def456
 ```
 
 3. Run the development server:
@@ -153,8 +157,10 @@ npm run dev
 ### Authentication & Security
 - Clerk (authentication and user management)
 - Input validation and sanitization
-- Distributed rate limiting
-- Admin access controls
+- Distributed rate limiting with memory store management
+- Admin access controls with enhanced diagnostics
+- Emergency admin bypass mechanisms
+- Comprehensive error logging and troubleshooting
 
 ### Infrastructure
 - Redis (rate limiting, optional)
@@ -172,7 +178,7 @@ npm run dev
 - `/api/crawl` - Crawl and index website content with configurable modes
 - `/api/invitations` - Manage user invitations with rate limiting
 - `/api/admin/config` - Detailed system configuration status
-- `/api/admin/rate-limit-status` - Rate limiting status and recommendations
+- `/api/admin/rate-limit-status` - Rate limiting status, memory store statistics, and manual cleanup
 
 ## Current Implementation Status
 
@@ -182,8 +188,8 @@ npm run dev
 - **Advanced crawling system** with configurable modes
 - **Comprehensive error tracking** and partial success handling
 - **Clerk authentication** with admin controls
-- **Distributed rate limiting** with Redis support
-- **Admin dashboard** with real-time configuration monitoring
+- **Distributed rate limiting** with Redis support and smart memory store management
+- **Admin dashboard** with real-time configuration monitoring and memory statistics
 - Context-aware chat interface with streaming responses
 - Context panel with source display and relevance scores
 - Web crawling infrastructure with smart retry logic
@@ -193,6 +199,9 @@ npm run dev
 - Input validation and security sanitization
 - Synchronized timeout management
 - Rich UI feedback with detailed error reporting
+- **Enhanced admin access diagnostics** with comprehensive error logging
+- **Emergency admin bypass mechanisms** for service failure scenarios
+- **Memory store cleanup** with proper handling of invitation and crawl rate limit keys
 
 ### 🔄 Ready for Enhancement
 - Advanced context retrieval algorithms
@@ -218,6 +227,28 @@ This is Step 3 of the Forge development. The next steps will include:
 - Verify your email is included in the `ADMIN_EMAILS` environment variable
 - Check Clerk dashboard for user management and settings
 
+### Admin Access Issues
+When admin users cannot bypass rate limits or access admin features:
+
+1. **Email Lookup Failures**: Check server logs for detailed diagnostics
+   - Verify `CLERK_SECRET_KEY` is correctly configured
+   - Ensure admin email exists in Clerk dashboard
+   - Check for Clerk service connectivity issues
+
+2. **Emergency Admin Bypass**: Use as temporary workaround
+   ```bash
+   # Add your Clerk user ID to emergency admin list
+   EMERGENCY_ADMIN_USER_IDS=user_abc123,user_def456
+   ```
+   - Find your user ID in Clerk dashboard or browser dev tools
+   - Only use when normal email lookup fails
+   - Remove after fixing the underlying issue
+
+3. **Service Diagnostics**: Check `/api/admin/rate-limit-status` for detailed status
+   - Reports admin configuration issues
+   - Shows Clerk API connectivity status
+   - Provides actionable troubleshooting steps
+
 ### Context Not Loading
 - Check that your OpenAI API key is set correctly
 - If using Pinecone, ensure your API key and index name are configured
@@ -231,6 +262,28 @@ This is Step 3 of the Forge development. The next steps will include:
 - **Network Issues**: The system will automatically retry transient errors
 - **Permissions**: Ensure the website allows web scraping
 - **URL Accessibility**: Verify the website URL is publicly accessible
+
+### Rate Limiting & Memory Store Issues
+When using memory-based rate limiting (development mode):
+
+1. **Memory Store Statistics**: Check `/api/admin/rate-limit-status` for memory usage
+   - Shows invitation vs crawl rate limit key counts
+   - Reports estimated memory usage
+   - Tracks oldest and newest entries
+
+2. **Manual Cleanup**: Force cleanup via admin endpoint
+   ```bash
+   # POST to admin endpoint to force cleanup
+   curl -X POST /api/admin/rate-limit-status
+   ```
+   - Removes expired rate limit entries
+   - Reports cleanup statistics
+   - Helps with debugging memory issues
+
+3. **Performance Recommendations**: 
+   - Switch to Redis for production (`RATE_LIMIT_MODE=redis`)
+   - Monitor memory usage warnings in admin dashboard
+   - Consider cleanup if memory usage exceeds 5MB
 
 ### Pinecone Setup Issues
 

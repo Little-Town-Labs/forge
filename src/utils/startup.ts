@@ -207,7 +207,7 @@ function validateRateLimiting(): ValidationResult {
 /**
  * Format and log validation results
  */
-function logValidationResults(results: ValidationResult[], config: StartupValidationConfig): void {
+function logValidationResults(results: ValidationResult[], _config: StartupValidationConfig): void {
   const totalIssues = results.reduce((sum, r) => sum + r.issues.length, 0);
   const totalWarnings = results.reduce((sum, r) => sum + r.warnings.length, 0);
   const validComponents = results.filter(r => r.isValid).length;

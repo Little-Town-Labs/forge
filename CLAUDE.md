@@ -36,6 +36,10 @@ MAX_INVITATIONS_PER_HOUR=20
 MAX_CRAWL_PAGES=100
 MAX_CRAWL_DEPTH=3
 CRAWL_TIMEOUT_MS=600000
+
+# Optional - Emergency Admin Access (fallback mechanism)
+# Comma-separated list of Clerk user IDs for admin bypass when email lookup fails
+# EMERGENCY_ADMIN_USER_IDS=user_abc123,user_def456
 ```
 
 ## Architecture Overview
@@ -89,8 +93,10 @@ CRAWL_TIMEOUT_MS=600000
   - Single: 60 crawls/hour
   - Limited: 10 crawls/hour  
   - Deep: 3 crawls/hour
-- **Admin Bypass**: Administrators can bypass crawl rate limits
+- **Admin Bypass**: Administrators can bypass crawl rate limits with comprehensive logging
 - **Distributed Rate Limiting**: Redis-backed rate limiting with memory fallback
+- **Enhanced Error Handling**: Comprehensive admin access diagnostics and fallback mechanisms
+- **Memory Store Management**: Smart cleanup for both invitation and crawl rate limit keys
 
 ## Core Components
 
@@ -100,7 +106,7 @@ CRAWL_TIMEOUT_MS=600000
 - **`/api/crawl`** - Web crawling and indexing endpoint with embedding provider selection
 - **`/api/health`** - Health check endpoint with configuration validation
 - **`/api/admin/config`** - Detailed configuration status (admin-only)
-- **`/api/admin/rate-limit-status`** - Rate limiting status and recommendations (admin-only)
+- **`/api/admin/rate-limit-status`** - Rate limiting status, memory store statistics, and manual cleanup (admin-only)
 - **`/api/invitations`** - Invitation management with distributed rate limiting
 
 ### Context System (`src/utils/context.ts`)
@@ -127,12 +133,12 @@ All loading components include comprehensive accessibility features:
 
 ### Utilities (`src/utils/`)
 - **embeddings.ts** - Multi-provider embedding generation (OpenAI & Google)
-- **crawler.ts** - Web scraping with Cheerio
+- **crawler.ts** - Web scraping with Cheerio and enhanced error tracking
 - **documents.ts** - Text chunking and processing
 - **seed.ts** - Knowledge base seeding operations with embedding provider support
 - **admin.ts** - Admin utility functions and validation
 - **startup.ts** - Application startup validation and health checks
-- **rateLimiter.ts** - Distributed rate limiting with Redis/memory/disabled modes
+- **rateLimiter.ts** - Distributed rate limiting with Redis/memory/disabled modes and admin access diagnostics
 - **errorTracking.ts** - Centralized error tracking with privacy controls
 - **apiResponse.ts** - Standardized API response utilities with error handling
 
@@ -215,6 +221,33 @@ The application gracefully handles provider unavailability:
 3. **Rate Limiting**: Validates rate limiting configuration and Redis setup
 4. **AI Provider Status**: Reports OpenAI and Google AI configuration status
 
+## Admin Access & Troubleshooting
+
+### Enhanced Admin Detection
+- **Comprehensive Error Logging**: Detailed diagnostics when admin email lookup fails
+- **Fallback Mechanisms**: Emergency admin bypass using `EMERGENCY_ADMIN_USER_IDS`
+- **Service Health Monitoring**: Automatic detection of Clerk service issues
+- **Configuration Diagnostics**: Automated troubleshooting of admin access problems
+
+### Admin Access Troubleshooting
+When admin users cannot bypass rate limits, the system provides:
+1. **Diagnostic Information**: Checks `CLERK_SECRET_KEY` and `ADMIN_EMAILS` configuration
+2. **Network Issue Detection**: Identifies connectivity problems with Clerk API
+3. **Service Status Monitoring**: Reports Clerk API availability and rate limiting
+4. **Emergency Bypass Options**: Fallback mechanism using Clerk user IDs
+
+### Memory Store Management
+- **Smart Cleanup**: Handles both invitation and crawl rate limit keys correctly
+- **Statistics Monitoring**: Tracks memory usage, key counts, and entry age
+- **Manual Cleanup**: Admin endpoint for forcing memory store cleanup
+- **Performance Monitoring**: Memory usage estimation and cleanup logging
+
+### Rate Limiting Diagnostics
+- **Memory Store Statistics**: Real-time monitoring of in-memory rate limit data
+- **Cleanup Reporting**: Logs cleanup activity with key type breakdown
+- **Performance Recommendations**: Warns about high memory usage or key counts
+- **Manual Controls**: Admin tools for testing and debugging rate limits
+
 ## Recent Updates
 
 ### Multi-Provider AI System
@@ -242,6 +275,14 @@ The application gracefully handles provider unavailability:
 - ✅ Enhanced admin dashboard with real-time configuration display
 - ✅ Server-side environment variable access for security
 - ✅ Improved error messages and user feedback
+
+### Admin Access & Rate Limiting Enhancements
+- ✅ Enhanced admin access diagnostics with comprehensive error logging
+- ✅ Emergency admin bypass fallback mechanism using `EMERGENCY_ADMIN_USER_IDS`
+- ✅ Fixed memory store cleanup to handle both invitation and crawl rate limit keys
+- ✅ Added memory store statistics monitoring and manual cleanup tools
+- ✅ Comprehensive troubleshooting for admin privilege detection failures
+- ✅ Smart rate limiting cleanup with proper TTL handling for different key types
 
 ### Enhanced Features
 - ✅ Model selector in chat interface

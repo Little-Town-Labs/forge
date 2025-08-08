@@ -85,12 +85,11 @@ export async function seed(
     const embeddingDimensions = getEmbeddingDimensions(embeddingProvider);
 
     // Check if index exists and create it if it doesn't
-    let indexExists = false;
+    // Check if index exists and create if necessary
     try {
       // Try to describe the index to check if it exists
       await pinecone.describeIndex(indexName);
-      indexExists = true;
-    } catch (describeError) {
+    } catch {
       // Index doesn't exist, create it
       console.log(`Creating Pinecone index: ${indexName} with ${embeddingDimensions} dimensions`);
       try {
@@ -109,7 +108,6 @@ export async function seed(
         // Wait for index to be ready
         console.log('Waiting for index to be ready...');
         await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
-        indexExists = true;
       } catch (createError) {
         console.error('Error creating index:', createError);
         throw new Error(`Failed to create Pinecone index: ${indexName}. Please ensure your Pinecone API key is correct and you have permission to create indexes.`);

@@ -1,5 +1,5 @@
 import { seed } from "@/utils/seed";
-import { SeedOptions, CrawlConfig, CrawlRequest } from "@/types";
+import { SeedOptions, CrawlConfig, CrawlRequest, CrawlStats, Page } from "@/types";
 import { EmbeddingProvider } from "@/utils/embeddings";
 import { verifyAuthentication, createSuccessResponse, CommonErrors, validateRequestBody, createErrorResponse, ErrorCodes, HttpStatus } from "@/utils/apiResponse";
 
@@ -202,9 +202,9 @@ export async function POST(req: Request) {
     });
     
     // Execute race with proper cleanup
-    let result: { documents: any[], crawlStats: any };
+    let result: { documents: Page[], crawlStats: CrawlStats };
     try {
-      result = await Promise.race([crawlPromise, timeoutPromise]) as { documents: any[], crawlStats: any };
+      result = await Promise.race([crawlPromise, timeoutPromise]) as { documents: Page[], crawlStats: CrawlStats };
       console.log('Crawl completed successfully, clearing timeout');
     } finally {
       // Always clear the timeout to prevent memory leaks and race conditions

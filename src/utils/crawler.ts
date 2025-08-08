@@ -298,7 +298,7 @@ export class Crawler {
   /**
    * Check robots.txt restrictions (placeholder for Phase 3)
    */
-  private checkRobotsTxt(url: string): boolean {
+  private checkRobotsTxt(_url: string): boolean {
     // Phase 3: Implement actual robots.txt checking
     // For now, allow all URLs
     return true;

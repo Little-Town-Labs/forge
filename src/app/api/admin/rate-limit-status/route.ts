@@ -65,7 +65,8 @@ export async function GET() {
 
     // Add memory store statistics if in memory mode
     if (rateLimitInfo.mode === 'memory') {
-      (statusInfo as any).memoryStoreStats = getMemoryStoreStatistics();
+      const extendedStatusInfo = statusInfo as typeof statusInfo & { memoryStoreStats?: ReturnType<typeof getMemoryStoreStatistics> };
+      extendedStatusInfo.memoryStoreStats = getMemoryStoreStatistics();
     }
     
     return createSuccessResponse(statusInfo);
@@ -83,7 +84,20 @@ export async function GET() {
 /**
  * Generate recommendations based on current rate limiting configuration
  */
-function generateRecommendations(rateLimitInfo: { mode: string; environment: { nodeEnv?: string; redisConfigured: boolean }; memoryStore?: any }): string[] {
+interface RateLimitInfoWithMemoryStore {
+  mode: string;
+  environment: { nodeEnv?: string; redisConfigured: boolean };
+  memoryStore?: {
+    totalKeys: number;
+    invitationKeys: number;
+    crawlKeys: number;
+    oldestEntry: number | null;
+    newestEntry: number | null;
+    memoryUsageKB: number;
+  };
+}
+
+function generateRecommendations(rateLimitInfo: RateLimitInfoWithMemoryStore): string[] {
   const recommendations: string[] = [];
   const { mode, environment } = rateLimitInfo;
   

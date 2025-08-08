@@ -9,7 +9,6 @@
 
 import { createClient, RedisClientType } from 'redis';
 import { createClerkClient } from "@clerk/backend";
-import { CrawlConfig } from '@/types';
 import { isAdmin } from '@/utils/admin';
 
 // Safe defaults for rate limiting
@@ -518,7 +517,6 @@ export function getRateLimitValidation() {
 }
 
 // Log rate limiting configuration on startup
-const rateLimitInfo = getRateLimitInfo();
 const emoji = RATE_LIMIT_MODE === 'redis' ? '🔴' : RATE_LIMIT_MODE === 'memory' ? '🟡' : '⚪';
 
 console.log(`${emoji} Rate limiting: ${RATE_LIMIT_MODE.toUpperCase()} mode`);
@@ -732,17 +730,20 @@ async function getUserEmail(userId: string): Promise<string | null> {
     console.warn(`User ${userId} has no email addresses`);
     return null;
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Enhanced error handling with admin context warnings
     const errorContext = `getUserEmail(${userId})`;
     
-    if (error?.status === 404) {
+    // Type-safe error checking
+    const errorObj = error as { status?: number; code?: string; message?: string; stack?: string };
+    
+    if (errorObj.status === 404) {
       console.warn(`${errorContext}: User not found in Clerk`);
       console.warn('   → If this user should be an admin, verify they exist in Clerk dashboard');
       return null;
     }
     
-    if (error?.status === 403 || error?.status === 401) {
+    if (errorObj.status === 403 || errorObj.status === 401) {
       console.error(`${errorContext}: Clerk authentication error - check CLERK_SECRET_KEY configuration`);
       console.error('   ⚠️  CRITICAL: Admin privilege detection is compromised!');
       console.error('   → Admin users will not be able to bypass rate limits');
@@ -751,7 +752,7 @@ async function getUserEmail(userId: string): Promise<string | null> {
     }
     
     // Handle rate limiting from Clerk itself
-    if (error?.status === 429) {
+    if (errorObj.status === 429) {
       console.error(`${errorContext}: Clerk API rate limit exceeded`);
       console.error('   ⚠️  WARNING: Admin privilege detection temporarily unavailable');
       console.error('   → Admin users will be subject to standard rate limits');
@@ -759,16 +760,16 @@ async function getUserEmail(userId: string): Promise<string | null> {
     }
     
     // Handle network/timeout errors
-    if (error?.code === 'ECONNREFUSED' || error?.code === 'ETIMEDOUT') {
-      console.error(`${errorContext}: Network error connecting to Clerk - ${error.message}`);
+    if (errorObj.code === 'ECONNREFUSED' || errorObj.code === 'ETIMEDOUT') {
+      console.error(`${errorContext}: Network error connecting to Clerk - ${errorObj.message || 'Unknown error'}`);
       console.error('   ⚠️  WARNING: Admin privilege detection unavailable due to connectivity');
       console.error('   → Admin users will be subject to standard rate limits until connectivity is restored');
       return null;
     }
     
     // Handle service unavailable
-    if (error?.status === 503 || error?.status === 502 || error?.status === 500) {
-      console.error(`${errorContext}: Clerk service unavailable (HTTP ${error.status})`);
+    if (errorObj.status === 503 || errorObj.status === 502 || errorObj.status === 500) {
+      console.error(`${errorContext}: Clerk service unavailable (HTTP ${errorObj.status})`);
       console.error('   ⚠️  WARNING: Admin privilege detection temporarily unavailable');
       console.error('   → Admin users will be subject to standard rate limits');
       return null;
@@ -776,10 +777,10 @@ async function getUserEmail(userId: string): Promise<string | null> {
     
     // Log unexpected errors with more context
     console.error(`${errorContext}: Unexpected error fetching user email from Clerk:`, {
-      message: error?.message || 'Unknown error',
-      status: error?.status || 'No status',
-      code: error?.code || 'No code',
-      stack: error?.stack?.substring(0, 200) || 'No stack trace'
+      message: errorObj.message || 'Unknown error',
+      status: errorObj.status || 'No status',
+      code: errorObj.code || 'No code',
+      stack: errorObj.stack?.substring(0, 200) || 'No stack trace'
     });
     console.error('   ⚠️  WARNING: Admin privilege detection failed due to unexpected error');
     console.error('   → Admin users may be subject to standard rate limits');
@@ -899,7 +900,7 @@ function getMemoryCount(key: string): number {
 /**
  * Set count in memory store with TTL
  */
-function setMemoryCount(key: string, count: number, ttl: number): void {
+function setMemoryCount(key: string, count: number, _ttl: number): void {
   const now = Date.now();
   memoryStore.set(key, {
     count: 0, // Not used for crawl limits
