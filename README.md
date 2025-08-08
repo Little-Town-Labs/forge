@@ -6,24 +6,41 @@ A Next.js chatbot application built with the Vercel AI SDK and context-aware res
 
 ## Features
 
+### AI & Intelligence
 - **Multi-Provider AI Support**: OpenAI and Google AI models with easy switching
 - **Multi-Provider Embeddings**: OpenAI and Google embeddings with automatic fallback
-- Real-time chat interface with streaming responses
-- Context-aware responses using semantic search
-- Web crawling and knowledge base seeding (Pinecone integration ready)
-- Modern, responsive design with dark mode support
-- Context panel showing relevant sources
-- Admin interface for adding knowledge base content
-- Demo context system for testing
+- **Context-Aware Responses**: Semantic search with relevant source display
+- **Real-Time Chat**: Streaming responses with modern UI
+
+### Advanced Crawling System
+- **Configurable Crawl Modes**: Single page, limited crawl (1-50 pages), or deep crawl (2-3 levels)
+- **Comprehensive Error Tracking**: Partial success handling with detailed error reporting
+- **Smart Retry Logic**: Automatic retry for transient errors (timeouts, 5xx responses)
+- **Synchronized Timeout Management**: Coordinated API and crawler timeouts
+
+### Security & Administration
+- **Clerk Authentication**: Secure user management with admin controls
+- **Admin Dashboard**: Real-time configuration monitoring and management
+- **Distributed Rate Limiting**: Redis-backed rate limiting with memory fallback
+- **Input Validation**: Comprehensive security bounds and sanitization
+
+### User Experience  
+- **Modern Design**: Responsive design with dark mode support
+- **Rich Error Feedback**: Clear success/warning/error states with detailed information
+- **Progressive UI**: Loading states, accessibility features, and intuitive controls
+- **Demo Mode**: Works immediately without configuration for testing
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ 
-- OpenAI API key (required)
+- OpenAI API key (required for AI models and embeddings)
+- Clerk account and API keys (required for authentication)
+- Admin email address (required for admin access)
 - Google AI API key (optional - for Gemini models and embeddings)
-- Pinecone API key and index (optional for full functionality)
+- Pinecone API key and index (optional - enables knowledge base features)
+- Redis instance (optional - for distributed rate limiting)
 
 ### Installation
 
@@ -33,14 +50,31 @@ npm install
 ```
 
 2. Set up environment variables:
-Create a `.env.local` file in the root directory and add your API keys:
+Create a `.env.local` file in the root directory:
 ```
+# Required - AI and Authentication
 OPENAI_API_KEY=your_openai_api_key_here
-# Optional - for Google Gemini models and embeddings:
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
+CLERK_SECRET_KEY=your_clerk_secret_key_here
+
+# Required - Admin Configuration
+ADMIN_EMAILS=admin@company.com,manager@company.com
+
+# Optional - for Google AI models and embeddings:
 GOOGLE_AI_API_KEY=your_google_ai_api_key_here
-# Optional for full functionality:
+
+# Optional - for full functionality (enables knowledge base):
 PINECONE_API_KEY=your_pinecone_api_key_here
 PINECONE_INDEX=your_pinecone_index_name
+
+# Optional - Rate Limiting and Performance
+RATE_LIMIT_MODE=redis
+REDIS_URL=redis://localhost:6379
+MAX_INVITATIONS_PER_MINUTE=5
+MAX_INVITATIONS_PER_HOUR=20
+MAX_CRAWL_PAGES=100
+MAX_CRAWL_DEPTH=3
+CRAWL_TIMEOUT_MS=600000
 ```
 
 3. Run the development server:
@@ -59,11 +93,17 @@ npm run dev
 
 ### Full Knowledge Base Mode
 1. Set up Pinecone API key and index name in `.env.local`
-2. Click the "Add Knowledge Base" button on the main page
-3. Enter a website URL you want to crawl
-4. **Select embedding provider** (OpenAI or Google) for the crawl
-5. Click "Crawl Website" to index the content
-6. The chatbot will now use this content for context-aware responses
+2. Sign in with admin credentials (email must be in `ADMIN_EMAILS`)
+3. Click the "Add Knowledge Base" button on the main page
+4. Enter a website URL you want to crawl
+5. **Choose crawl mode**:
+   - **Single Page**: Crawl just the specified URL (~30 seconds)
+   - **Limited Crawl**: Crawl 1-50 pages from the site (~1-10 minutes)
+   - **Deep Crawl**: Multi-level crawling 2-3 levels deep (~5-10 minutes)
+6. **Select embedding provider** (OpenAI or Google) for the crawl
+7. Click "Crawl Website" to index the content
+8. The system will show detailed progress including any failed pages
+9. The chatbot will now use this content for context-aware responses
 
 ### AI Model Selection
 
@@ -97,39 +137,70 @@ npm run dev
 
 ## Technologies Used
 
-- Next.js 15
+### Core Framework
+- Next.js 15 (App Router)
 - React 19
+- TypeScript
+- Tailwind CSS
+
+### AI & Machine Learning
 - Vercel AI SDK
 - **Multi-Provider AI**: OpenAI & Google AI Models
 - **Multi-Provider Embeddings**: OpenAI & Google Embeddings
 - Pinecone Vector Database (optional)
-- Tailwind CSS
-- TypeScript
+- LangChain (document processing)
+
+### Authentication & Security
+- Clerk (authentication and user management)
+- Input validation and sanitization
+- Distributed rate limiting
+- Admin access controls
+
+### Infrastructure
+- Redis (rate limiting, optional)
+- Cheerio (web scraping)
+- Node.js server-side operations
 
 ## API Endpoints
 
+### Public Endpoints
 - `/api/chat` - Main chat endpoint with context-aware responses
 - `/api/context` - Retrieve relevant context for queries
-- `/api/crawl` - Crawl and index website content
+- `/api/health` - Health check with configuration validation
+
+### Admin Endpoints (Authentication Required)
+- `/api/crawl` - Crawl and index website content with configurable modes
+- `/api/invitations` - Manage user invitations with rate limiting
+- `/api/admin/config` - Detailed system configuration status
+- `/api/admin/rate-limit-status` - Rate limiting status and recommendations
 
 ## Current Implementation Status
 
 ### ✅ Completed
 - **Multi-provider AI system** (OpenAI & Google)
 - **Multi-provider embeddings** (OpenAI & Google)
-- Context-aware chat interface
-- Context panel with source display
-- Web crawling infrastructure
-- Embeddings generation
-- Demo context system
-- Admin interface for knowledge base management
-- **Full Pinecone integration**
+- **Advanced crawling system** with configurable modes
+- **Comprehensive error tracking** and partial success handling
+- **Clerk authentication** with admin controls
+- **Distributed rate limiting** with Redis support
+- **Admin dashboard** with real-time configuration monitoring
+- Context-aware chat interface with streaming responses
+- Context panel with source display and relevance scores
+- Web crawling infrastructure with smart retry logic
+- Embeddings generation with automatic fallback
+- Demo context system for immediate testing
+- **Full Pinecone integration** with dynamic index creation
+- Input validation and security sanitization
+- Synchronized timeout management
+- Rich UI feedback with detailed error reporting
 
 ### 🔄 Ready for Enhancement
 - Advanced context retrieval algorithms
-- Multi-modal support
-- User authentication
+- Multi-modal support (images, documents)
 - Additional AI providers (Anthropic, etc.)
+- Robots.txt checking implementation
+- Advanced conversation memory
+- Performance optimizations and caching
 
 ## Next Steps
 
@@ -142,15 +213,24 @@ This is Step 3 of the Forge development. The next steps will include:
 
 ## Troubleshooting
 
+### Authentication Issues
+- Ensure `CLERK_SECRET_KEY` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` are set correctly
+- Verify your email is included in the `ADMIN_EMAILS` environment variable
+- Check Clerk dashboard for user management and settings
+
 ### Context Not Loading
 - Check that your OpenAI API key is set correctly
 - If using Pinecone, ensure your API key and index name are configured
 - The demo context will show if Pinecone is not configured
+- Check the `/api/health` endpoint for configuration status
 
 ### Crawling Issues
-- Ensure the website URL is accessible
-- Check browser console for any error messages
-- Verify that the website allows web scraping
+- **Rate Limiting**: Check if you've exceeded crawl limits (visible in admin dashboard)
+- **Partial Failures**: Review the detailed error report in the crawl results
+- **Timeouts**: Try a simpler crawl mode (single page vs deep crawl)
+- **Network Issues**: The system will automatically retry transient errors
+- **Permissions**: Ensure the website allows web scraping
+- **URL Accessibility**: Verify the website URL is publicly accessible
 
 ### Pinecone Setup Issues
 

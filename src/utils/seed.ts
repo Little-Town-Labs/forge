@@ -3,16 +3,44 @@ import { Crawler } from './crawler';
 import { RecursiveCharacterTextSplitter, MarkdownTextSplitter } from 'langchain/text_splitter';
 import { prepareDocument, chunkedUpsert, DocumentSplitter } from './documents';
 import { embedDocument, getEmbeddingDimensions, EmbeddingProvider } from './embeddings';
-import { Page, SeedOptions } from '@/types';
+import { Page, SeedOptions, CrawlConfig, CrawlStats } from '@/types';
 
+/**
+ * Configure crawler parameters based on crawl mode
+ */
+function configureCrawler(crawlConfig: CrawlConfig): { depth: number, pages: number } {
+  switch (crawlConfig.mode) {
+    case 'single':
+      return { depth: 1, pages: 1 };
+    case 'limited':
+      return { depth: 2, pages: crawlConfig.maxPages || 10 };
+    case 'deep':
+      return { depth: crawlConfig.maxDepth || 2, pages: 100 };
+    default:
+      return { depth: 1, pages: 1 };
+  }
+}
+
+/**
+ * Seed the knowledge base with documents from a URL
+ * @param url - The URL to crawl
+ * @param indexName - The Pinecone index name
+ * @param options - Chunking and splitting options
+ * @param crawlConfig - Configuration for crawling behavior
+ * @param namespace - Pinecone namespace (default: 'default')
+ * @param embeddingProvider - Embedding provider to use (default: 'openai')
+ * @param timeoutMs - Optional timeout in milliseconds for crawler operations
+ * @returns Promise with documents and crawl statistics
+ */
 export async function seed(
   url: string, 
-  limit: number, 
   indexName: string, 
   options: SeedOptions, 
+  crawlConfig: CrawlConfig,
   namespace: string = 'default',
-  embeddingProvider: EmbeddingProvider = 'openai'
-) {
+  embeddingProvider: EmbeddingProvider = 'openai',
+  timeoutMs?: number
+): Promise<{ documents: Page[], crawlStats: CrawlStats }> {
   try {
     // Check if Pinecone is configured
     if (!process.env.PINECONE_API_KEY) {
@@ -24,14 +52,27 @@ export async function seed(
       apiKey: process.env.PINECONE_API_KEY,
     });
 
+    // Track crawl statistics
+    const startTime = Date.now();
+    
     // Destructure the options object
     const { splittingMethod, chunkSize, chunkOverlap } = options;
 
-    // Create a new Crawler with depth 1 and maximum pages as limit
-    const crawler = new Crawler(1, limit || 100);
+    // Configure crawler based on crawl mode
+    const { depth, pages: maxPages } = configureCrawler(crawlConfig);
+    
+    // Calculate crawler timeout (slightly less than API timeout to allow for cleanup)
+    // Default to 2 minutes if no timeout specified, reduce by 10% for cleanup buffer
+    const crawlerTimeoutMs = timeoutMs ? Math.floor(timeoutMs * 0.9) : 120000;
+    
+    console.log(`Setting crawler timeout: ${crawlerTimeoutMs}ms (${Math.round(crawlerTimeoutMs / 1000)}s) - API timeout: ${timeoutMs || 'not specified'}ms`);
+    
+    // Create a new Crawler with configured parameters
+    const crawler = new Crawler(depth, maxPages, crawlerTimeoutMs);
 
-    // Crawl the given URL and get the pages
-    const pages = await crawler.crawl(url) as Page[];
+    // Crawl the given URL and get the pages and stats
+    const crawlResult = await crawler.crawl(url);
+    const pages = crawlResult.pages;
 
     // Choose the appropriate document splitter based on the splitting method
     const splitter: DocumentSplitter = splittingMethod === 'recursive' ?
@@ -86,8 +127,20 @@ export async function seed(
 
     console.log(`Successfully indexed ${vectors.length} vectors in namespace: ${namespace} using ${embeddingProvider} embeddings`);
     
-    // Return the first document
-    return documents[0];
+    // Update crawl statistics with processing information
+    const endTime = Date.now();
+    const crawlStats: CrawlStats = {
+      ...crawlResult.stats, // Use crawler's stats as base
+      pagesProcessed: vectors.length, // Update with actual processed count
+      totalTokens: vectors.reduce((total, vector) => total + (vector.values?.length || 0), 0), // Update with actual tokens
+      crawlDuration: endTime - startTime // Update with total duration including processing
+    };
+    
+    // Return documents and statistics
+    return {
+      documents: pages,
+      crawlStats
+    };
   } catch (error) {
     console.error("Error seeding:", error);
     throw error;

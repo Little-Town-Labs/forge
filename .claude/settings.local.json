@@ -18,7 +18,10 @@
       "Bash(npx next:*)",
       "Bash(cp:*)",
       "Bash(npx eslint:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(timeout 60s npm run build)",
+      "Bash(timeout 30s npm run build)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

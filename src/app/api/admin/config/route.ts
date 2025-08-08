@@ -1,8 +1,8 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { isAdmin } from "@/utils/admin";
 import { getValidationStatus } from "@/utils/startup";
 import { getRateLimitInfo } from "@/utils/rateLimiter";
-import { createSuccessResponse, createErrorResponse, ErrorCodes, HttpStatus } from "@/utils/apiResponse";
+import { verifyAuthentication, createSuccessResponse, createErrorResponse, ErrorCodes, HttpStatus } from "@/utils/apiResponse";
 
 
 /**
@@ -13,11 +13,11 @@ import { createSuccessResponse, createErrorResponse, ErrorCodes, HttpStatus } fr
 export async function GET() {
   try {
     // Verify authentication
-    const { userId } = await auth();
-    if (!userId) {
-      return createErrorResponse("Unauthorized - Please sign in", ErrorCodes.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);
+    const authResult = await verifyAuthentication();
+    if (!authResult.success) {
+      return authResult.response!;
     }
-
+    
     // Get current user details to check admin status
     const user = await currentUser();
     if (!user?.emailAddresses?.[0]?.emailAddress) {
@@ -44,6 +44,17 @@ export async function GET() {
         uptime: process.uptime()
       },
       rateLimiting: getRateLimitInfo(),
+      crawlConfig: {
+        maxPages: parseInt(process.env.MAX_CRAWL_PAGES || '100'),
+        maxDepth: parseInt(process.env.MAX_CRAWL_DEPTH || '3'),
+        timeoutMinutes: Math.round(parseInt(process.env.CRAWL_TIMEOUT_MS || '600000') / 60000),
+        robotsTxtSupport: false, // Not currently implemented
+        rateLimits: {
+          singleCrawlsPerHour: parseInt(process.env.MAX_SINGLE_CRAWLS_PER_HOUR || '60'),
+          limitedCrawlsPerHour: parseInt(process.env.MAX_LIMITED_CRAWLS_PER_HOUR || '10'),
+          deepCrawlsPerHour: parseInt(process.env.MAX_DEEP_CRAWLS_PER_HOUR || '3')
+        }
+      },
       features: {
         pineconeConfigured: !!(process.env.PINECONE_API_KEY && process.env.PINECONE_INDEX),
         clerkConfigured: !!(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY),
@@ -58,7 +69,7 @@ export async function GET() {
       },
       requestInfo: {
         userEmail,
-        userId,
+        userId: authResult.userId!,
         timestamp: new Date().toISOString(),
         userAgent: 'server-side-request'
       }

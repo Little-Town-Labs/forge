@@ -13,12 +13,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Environment Setup
 Create `.env.local` with:
 ```
+# Required - AI and Authentication
 OPENAI_API_KEY=your_openai_api_key_here
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
+CLERK_SECRET_KEY=your_clerk_secret_key_here
+
+# Required - Admin Configuration
+ADMIN_EMAILS=admin@company.com,manager@company.com
+
 # Optional - for Google AI models and embeddings:
 GOOGLE_AI_API_KEY=your_google_ai_api_key_here
-# Optional for full functionality:
+
+# Optional - for full functionality (enables knowledge base):
 PINECONE_API_KEY=your_pinecone_api_key_here
 PINECONE_INDEX=your_pinecone_index_name
+
+# Optional - Rate Limiting and Performance
+RATE_LIMIT_MODE=redis
+REDIS_URL=redis://localhost:6379
+MAX_INVITATIONS_PER_MINUTE=5
+MAX_INVITATIONS_PER_HOUR=20
+MAX_CRAWL_PAGES=100
+MAX_CRAWL_DEPTH=3
+CRAWL_TIMEOUT_MS=600000
 ```
 
 ## Architecture Overview
@@ -48,6 +65,32 @@ PINECONE_INDEX=your_pinecone_index_name
 - **Google Embeddings**: 768 dimensions, fast and cost-effective
 - **Fallback System**: Google embeddings fallback to OpenAI if needed
 - **Dynamic Dimensions**: Index creation matches embedding provider dimensions
+
+## Advanced Crawling System
+
+### Configurable Crawl Modes
+- **Single Page**: Crawl only the specified URL (~30 seconds)
+- **Limited Crawl**: Crawl a specific number of pages (1-50 pages, ~1-10 minutes)
+- **Deep Crawl**: Multi-level site crawling (2-3 levels deep, ~5-10 minutes)
+
+### Enhanced Error Tracking
+- **Partial Success Handling**: Continue crawling even when some pages fail
+- **Comprehensive Error Reporting**: Track failed URLs and detailed error messages
+- **Smart Retry Logic**: Automatic retry for transient errors (timeouts, 5xx responses, network issues)
+- **User Feedback**: Clear distinction between complete success, partial success, and failure
+
+### Timeout Management
+- **Synchronized Timeouts**: API and crawler timeouts properly coordinated
+- **Mode-Specific Timeouts**: Different timeout values based on crawl complexity
+- **Graceful Degradation**: Crawler timeout is 90% of API timeout for cleanup
+
+### Rate Limiting
+- **Mode-Specific Limits**: Different rate limits for each crawl mode
+  - Single: 60 crawls/hour
+  - Limited: 10 crawls/hour  
+  - Deep: 3 crawls/hour
+- **Admin Bypass**: Administrators can bypass crawl rate limits
+- **Distributed Rate Limiting**: Redis-backed rate limiting with memory fallback
 
 ## Core Components
 
@@ -183,9 +226,27 @@ The application gracefully handles provider unavailability:
 - ✅ Dynamic index creation with correct dimensions
 - ✅ Enhanced UI with provider selection controls
 
+### Advanced Crawling Enhancements
+- ✅ Configurable crawl modes (single, limited, deep)
+- ✅ Comprehensive error tracking and partial success handling
+- ✅ Smart retry logic for transient errors (timeouts, 5xx, network)
+- ✅ Synchronized timeout management between API and crawler
+- ✅ Enhanced crawl configuration validation with security bounds
+- ✅ Rich UI error reporting with failed pages and error details
+- ✅ Mode-specific rate limiting with admin bypass functionality
+- ✅ Proper getUserEmail() integration with Clerk authentication
+
+### Security & Configuration
+- ✅ Removed misleading robots.txt configuration
+- ✅ Added comprehensive input validation and sanitization
+- ✅ Enhanced admin dashboard with real-time configuration display
+- ✅ Server-side environment variable access for security
+- ✅ Improved error messages and user feedback
+
 ### Enhanced Features
 - ✅ Model selector in chat interface
 - ✅ Embedding provider selector in crawl form
 - ✅ Provider-specific dimension handling
 - ✅ Comprehensive error handling and fallbacks
 - ✅ Updated documentation and validation
+- ✅ Partial success warnings and detailed error displays

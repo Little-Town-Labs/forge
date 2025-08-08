@@ -13,6 +13,23 @@ interface AdminStats {
   isLoading: boolean;
 }
 
+interface CrawlConfig {
+  maxPages: number;
+  maxDepth: number;
+  timeoutMinutes: number;
+  robotsTxtSupport: boolean;
+  rateLimits: {
+    singleCrawlsPerHour: number;
+    limitedCrawlsPerHour: number;
+    deepCrawlsPerHour: number;
+  };
+}
+
+interface AdminConfig {
+  crawlConfig: CrawlConfig;
+  isLoading: boolean;
+}
+
 const AdminDashboard: React.FC = () => {
   const { user } = useUser();
   const router = useRouter();
@@ -21,10 +38,25 @@ const AdminDashboard: React.FC = () => {
     pendingInvitations: 0,
     isLoading: true,
   });
+  const [config, setConfig] = useState<AdminConfig>({
+    crawlConfig: {
+      maxPages: 100,
+      maxDepth: 3,
+      timeoutMinutes: 10,
+      robotsTxtSupport: false,
+      rateLimits: {
+        singleCrawlsPerHour: 60,
+        limitedCrawlsPerHour: 10,
+        deepCrawlsPerHour: 3
+      }
+    },
+    isLoading: true,
+  });
 
-  // Fetch admin stats when component mounts
+  // Fetch admin stats and config when component mounts
   useEffect(() => {
     fetchAdminStats();
+    fetchAdminConfig();
   }, []);
 
   const fetchAdminStats = async () => {
@@ -41,6 +73,24 @@ const AdminDashboard: React.FC = () => {
     } catch (error) {
       console.error("Failed to fetch admin stats:", error);
       setStats(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const fetchAdminConfig = async () => {
+    try {
+      const response = await fetch("/api/admin/config");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data.crawlConfig) {
+          setConfig({
+            crawlConfig: data.data.crawlConfig,
+            isLoading: false,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch admin config:", error);
+      setConfig(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -152,6 +202,84 @@ const AdminDashboard: React.FC = () => {
                     </p>
                   </div>
                 </button>
+              </div>
+            </div>
+
+            {/* Crawl Configuration */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Crawl Configuration
+              </h2>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                    <div className="font-medium text-gray-900 dark:text-white">Max Pages</div>
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {config.isLoading ? "..." : config.crawlConfig.maxPages}
+                    </div>
+                    <div className="text-gray-600 dark:text-gray-300">Deep crawls</div>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                    <div className="font-medium text-gray-900 dark:text-white">Max Depth</div>
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {config.isLoading ? "..." : config.crawlConfig.maxDepth}
+                    </div>
+                    <div className="text-gray-600 dark:text-gray-300">Levels</div>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                    <div className="font-medium text-gray-900 dark:text-white">Timeout</div>
+                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                      {config.isLoading ? "..." : config.crawlConfig.timeoutMinutes}m
+                    </div>
+                    <div className="text-gray-600 dark:text-gray-300">Minutes</div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+                  <h3 className="font-medium text-gray-900 dark:text-white mb-2">Rate Limits</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-300">Single page crawls/hour:</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {config.isLoading ? "..." : config.crawlConfig.rateLimits.singleCrawlsPerHour}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-300">Limited crawls/hour:</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {config.isLoading ? "..." : config.crawlConfig.rateLimits.limitedCrawlsPerHour}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-300">Deep crawls/hour:</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {config.isLoading ? "..." : config.crawlConfig.rateLimits.deepCrawlsPerHour}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+                  <h3 className="font-medium text-gray-900 dark:text-white mb-2">Configuration Status</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-gray-300">Robots.txt checking:</span>
+                      <span className={`font-medium px-2 py-1 rounded text-xs ${
+                        config.isLoading ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' :
+                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                      }`}>
+                        {config.isLoading ? '...' : 'Not implemented'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-gray-300">Crawl monitoring:</span>
+                      <span className="font-medium px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        Active
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
