@@ -457,7 +457,7 @@ const AuditLogsViewer: React.FC = () => {
                     </tr>
                     
                     {/* Expanded Details */}
-                    {expandedEntry === entry.id && (
+                    {(expandedEntry === entry.id) ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-4 bg-gray-50 dark:bg-gray-700">
                           <div className="space-y-4">
@@ -501,7 +501,7 @@ const AuditLogsViewer: React.FC = () => {
                           </div>
                         </td>
                       </tr>
-                    )}
+                    ) : null}
                   </React.Fragment>
                 ))}
               </tbody>

@@ -18,7 +18,9 @@ const CACHE_TTL = 30 * 1000;
 
 /**
  * Clear the request cache (useful for testing or forced refresh)
+ * Note: This function is available for internal cache management
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function clearModelCache(): void {
   requestCache = {};
 }
