@@ -3,6 +3,7 @@ import { isAdmin } from "@/utils/admin";
 import { getValidationStatus } from "@/utils/startup";
 import { getRateLimitInfo } from "@/utils/rateLimiter";
 import { verifyAuthentication, createSuccessResponse, createErrorResponse, ErrorCodes, HttpStatus } from "@/utils/apiResponse";
+import { getModelConfigs, getRagUrls, getDatabaseStats } from "@/lib/config-service";
 
 
 /**
@@ -33,9 +34,43 @@ export async function GET() {
     // Get validation status
     const validationStatus = getValidationStatus();
     
-    // Gather additional configuration information
+    // Get database-driven configuration data
+    let modelConfigs: unknown[], ragUrls: unknown[], databaseStats: unknown;
+    try {
+      [modelConfigs, ragUrls, databaseStats] = await Promise.all([
+        getModelConfigs(),
+        getRagUrls(), 
+        getDatabaseStats()
+      ]);
+    } catch (dbError) {
+      console.warn('Database configuration not available:', dbError);
+      modelConfigs = [];
+      ragUrls = [];
+      databaseStats = { health: { connected: false, responseTime: 0, error: 'Database unavailable' }, tableStats: [], connectionInfo: { database: 'unknown', user: 'unknown', applicationName: 'forge-admin' } };
+    }
+
+    // Gather comprehensive configuration information
     const configInfo = {
       validation: validationStatus,
+      database: databaseStats,
+      aiModels: {
+        configured: modelConfigs,
+        summary: {
+          total: modelConfigs.length,
+          enabled: modelConfigs.filter((m: unknown) => (m as Record<string, unknown>)?.isEnabled).length,
+          openai: modelConfigs.filter((m: unknown) => (m as Record<string, unknown>)?.provider === 'openai').length,
+          google: modelConfigs.filter((m: unknown) => (m as Record<string, unknown>)?.provider === 'google').length
+        }
+      },
+      knowledgeBase: {
+        configured: ragUrls,
+        summary: {
+          total: ragUrls.length,
+          active: ragUrls.filter((u: unknown) => (u as Record<string, unknown>)?.isActive).length,
+          successful: ragUrls.filter((u: unknown) => (u as Record<string, unknown>)?.crawlStatus === 'success').length,
+          totalPagesIndexed: ragUrls.reduce((sum: number, u: unknown) => sum + ((u as Record<string, unknown>)?.pagesIndexed as number || 0), 0)
+        }
+      },
       environment: {
         nodeEnv: process.env.NODE_ENV,
         nextjsVersion: "15.4.4", // Hardcoded for now
@@ -56,6 +91,8 @@ export async function GET() {
         }
       },
       features: {
+        databaseConfigured: databaseStats.health.connected,
+        encryptionConfigured: !!process.env.CONFIG_ENCRYPTION_KEY,
         pineconeConfigured: !!(process.env.PINECONE_API_KEY && process.env.PINECONE_INDEX),
         clerkConfigured: !!(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY),
         openaiConfigured: !!process.env.OPENAI_API_KEY,
@@ -65,7 +102,8 @@ export async function GET() {
       security: {
         adminEmailsCount: process.env.ADMIN_EMAILS ? process.env.ADMIN_EMAILS.split(',').filter(e => e.trim()).length : 0,
         usingExampleEmails: process.env.ADMIN_EMAILS === 'admin@company.com,manager@company.com',
-        hasSecretKeys: !!(process.env.CLERK_SECRET_KEY && process.env.OPENAI_API_KEY)
+        hasSecretKeys: !!(process.env.CLERK_SECRET_KEY && process.env.OPENAI_API_KEY),
+        encryptionKeyConfigured: !!process.env.CONFIG_ENCRYPTION_KEY
       },
       requestInfo: {
         userEmail,

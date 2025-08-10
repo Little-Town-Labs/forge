@@ -85,7 +85,7 @@ const ChatPage: React.FC = () => {
                     onChange={(e) => setSelectedModel(e.target.value as "openai" | "google")}
                     className="mr-2"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">OpenAI (GPT-4o-mini)</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">OpenAI (GPT-5-nano)</span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -96,7 +96,7 @@ const ChatPage: React.FC = () => {
                     onChange={(e) => setSelectedModel(e.target.value as "openai" | "google")}
                     className="mr-2"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Google (Gemini 1.5 Flash)</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Google (Gemini 2.5 Flash)</span>
                 </label>
               </div>
             </div>

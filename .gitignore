@@ -162,3 +162,6 @@ temp/
 
 # TypeScript
 next-env.d.ts
+
+#Cursor
+.cursor

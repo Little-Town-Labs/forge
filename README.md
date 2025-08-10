@@ -2,17 +2,26 @@
 
 **FORGE - Framework Operations & Resource Guidance Engine**
 
-A Next.js chatbot application built with the Vercel AI SDK and context-aware responses.
+A Next.js chatbot application with database-driven configuration, multi-provider AI support, and context-aware responses using semantic search.
 
 ## Features
 
+### Database-Driven Configuration
+- **Admin Configuration System**: Complete database-backed AI model and RAG URL management
+- **Field-Level Encryption**: Secure storage of sensitive configuration data (API keys)
+- **Audit Logging**: Comprehensive logging of all configuration changes with admin attribution
+- **Graceful Degradation**: Automatic fallback to demo mode when database unavailable
+- **Database Validation**: Comprehensive startup validation with clear setup instructions
+
 ### AI & Intelligence
-- **Multi-Provider AI Support**: OpenAI and Google AI models with easy switching
+- **Multi-Provider AI Support**: Database-configured OpenAI and Google AI models with admin controls
 - **Multi-Provider Embeddings**: OpenAI and Google embeddings with automatic fallback
 - **Context-Aware Responses**: Semantic search with relevant source display
 - **Real-Time Chat**: Streaming responses with modern UI
+- **Dynamic Model Selection**: Runtime model switching with database persistence
 
 ### Advanced Crawling System
+- **Database-Backed RAG URLs**: Persistent crawl configuration and status tracking
 - **Configurable Crawl Modes**: Single page, limited crawl (1-50 pages), or deep crawl (2-3 levels)
 - **Comprehensive Error Tracking**: Partial success handling with detailed error reporting
 - **Smart Retry Logic**: Automatic retry for transient errors (timeouts, 5xx responses)
@@ -20,6 +29,7 @@ A Next.js chatbot application built with the Vercel AI SDK and context-aware res
 
 ### Security & Administration
 - **Clerk Authentication**: Secure user management with admin controls
+- **Database Security**: Transaction-based operations with rollback capabilities
 - **Admin Dashboard**: Real-time configuration monitoring and management
 - **Distributed Rate Limiting**: Redis-backed rate limiting with memory fallback
 - **Input Validation**: Comprehensive security bounds and sanitization
@@ -29,15 +39,17 @@ A Next.js chatbot application built with the Vercel AI SDK and context-aware res
 - **Rich Error Feedback**: Clear success/warning/error states with detailed information
 - **Progressive UI**: Loading states, accessibility features, and intuitive controls
 - **Demo Mode**: Works immediately without configuration for testing
+- **Health Monitoring**: Built-in health checks with degradation mode indicators
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ 
-- OpenAI API key (required for AI models and embeddings)
-- Clerk account and API keys (required for authentication)
-- Admin email address (required for admin access)
+- **Database**: Vercel Postgres (required for configuration management)
+- **AI Provider**: OpenAI API key (required for AI models and embeddings)
+- **Authentication**: Clerk account and API keys (required for user management)
+- **Admin Access**: Admin email address (required for configuration access)
 - Google AI API key (optional - for Gemini models and embeddings)
 - Pinecone API key and index (optional - enables knowledge base features)
 - Redis instance (optional - for distributed rate limiting)
@@ -60,6 +72,12 @@ CLERK_SECRET_KEY=your_clerk_secret_key_here
 # Required - Admin Configuration
 ADMIN_EMAILS=admin@company.com,manager@company.com
 
+# Required - Database Configuration
+POSTGRES_URL=postgresql://username:password@hostname:port/database
+
+# Optional - Database Configuration Encryption
+CONFIG_ENCRYPTION_KEY=your_32_character_encryption_key_here
+
 # Optional - for Google AI models and embeddings:
 GOOGLE_AI_API_KEY=your_google_ai_api_key_here
 
@@ -81,40 +99,84 @@ CRAWL_TIMEOUT_MS=600000
 EMERGENCY_ADMIN_USER_IDS=user_abc123,user_def456
 ```
 
-3. Run the development server:
+3. Set up the database:
+```bash
+npm run setup-db
+```
+
+4. Verify the setup:
+```bash
+npm run validate-db-system
+npm run verify-models
+```
+
+5. Run the development server:
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Usage
 
-### Demo Mode (Default)
-- The chatbot works immediately with demo context
-- Context panel shows sample relevant sources
-- Perfect for testing the interface and functionality
+### Operation Modes
 
-### Full Knowledge Base Mode
-1. Set up Pinecone API key and index name in `.env.local`
-2. Sign in with admin credentials (email must be in `ADMIN_EMAILS`)
-3. Click the "Add Knowledge Base" button on the main page
-4. Enter a website URL you want to crawl
-5. **Choose crawl mode**:
+The application operates with automatic graceful degradation:
+
+#### Full Operation Mode
+- Database fully configured and connected
+- Admin configuration system accessible
+- AI models managed through database
+- Complete RAG functionality with audit logging
+
+#### Demo Mode (Graceful Degradation)
+- Activates automatically if database connection fails
+- Uses hardcoded demo context and fallback AI configurations
+- Perfect for testing the interface and functionality
+- All core chat features remain functional
+
+#### Readonly Mode
+- Database connected but some components missing
+- Limited configuration modifications
+- Read-only access to existing data
+
+### Admin Configuration Management
+
+1. **Setup Database**: Run `npm run setup-db` to initialize (or automatic on first startup)
+2. **Access Admin Panel**: Sign in with admin credentials (email in `ADMIN_EMAILS`)
+3. **Configure AI Models**: Access `/admin/config` to manage model configurations
+4. **Manage Knowledge Base**: Configure RAG URLs and crawl settings
+5. **Monitor System Health**: Check application status and degradation mode
+6. **Initialization Control**: Use `/api/admin/system/init` for initialization status and control
+
+### Automatic Production Deployment
+
+The application features automatic initialization for production environments:
+
+- **First Startup**: Database schema and seed data are automatically created on first run
+- **Health Monitoring**: Middleware ensures system is properly initialized before processing requests
+- **Graceful Degradation**: Service returns appropriate HTTP status codes during initialization
+- **Admin Control**: Monitor and control initialization through dedicated API endpoints
+- **Environment Validation**: Comprehensive checks for required configuration
+
+### Knowledge Base Management
+
+1. **Database Setup**: Ensure database is configured and running
+2. **Admin Access**: Sign in with admin credentials
+3. **Configure RAG URLs**: Navigate to admin configuration panel
+4. **Add Knowledge Sources**:
    - **Single Page**: Crawl just the specified URL (~30 seconds)
    - **Limited Crawl**: Crawl 1-50 pages from the site (~1-10 minutes)
    - **Deep Crawl**: Multi-level crawling 2-3 levels deep (~5-10 minutes)
-6. **Select embedding provider** (OpenAI or Google) for the crawl
-7. Click "Crawl Website" to index the content
-8. The system will show detailed progress including any failed pages
-9. The chatbot will now use this content for context-aware responses
+5. **Monitor Progress**: Track crawl status and error handling
+6. **Context-Aware Responses**: Chat system automatically uses indexed content
 
 ### AI Model Selection
 
-- Choose between OpenAI (GPT-4o-mini) and Google (Gemini 1.5 Flash) models
-- Switch models using the radio buttons above the chat interface
-- Each model has different strengths and capabilities
-- Context-aware responses work with both models
+- **Database-Driven Models**: Models configured through admin panel
+- **Runtime Selection**: Switch models using radio buttons above chat interface
+- **Provider Support**: OpenAI (GPT-5-nano) and Google (Gemini 2.5 Flash) models
+- **Configuration Management**: Admin can modify model parameters, API keys, and defaults
 - **Automatic Matching**: Chat model selection determines embedding provider
 
 ### Embedding Provider Selection
@@ -163,6 +225,7 @@ npm run dev
 - Comprehensive error logging and troubleshooting
 
 ### Infrastructure
+- **Vercel Postgres** (database operations and configuration management)
 - Redis (rate limiting, optional)
 - Cheerio (web scraping)
 - Node.js server-side operations
@@ -170,31 +233,49 @@ npm run dev
 ## API Endpoints
 
 ### Public Endpoints
-- `/api/chat` - Main chat endpoint with context-aware responses
+- `/api/chat` - Main chat endpoint with database-driven model configuration
 - `/api/context` - Retrieve relevant context for queries
-- `/api/health` - Health check with configuration validation
+- `/api/health` - Health check with database validation and degradation mode status
 
 ### Admin Endpoints (Authentication Required)
-- `/api/crawl` - Crawl and index website content with configurable modes
+- `/api/admin/config` - Comprehensive admin configuration management system
+  - `/api/admin/config/models` - AI model configuration management
+  - `/api/admin/config/knowledge-base` - RAG URL configuration management
+  - `/api/admin/config/models/test` - AI model connection testing
+- `/api/crawl` - Crawl and index website content with database-backed configuration
 - `/api/invitations` - Manage user invitations with rate limiting
-- `/api/admin/config` - Detailed system configuration status
 - `/api/admin/rate-limit-status` - Rate limiting status, memory store statistics, and manual cleanup
 
 ## Current Implementation Status
 
 ### ✅ Completed
-- **Multi-provider AI system** (OpenAI & Google)
+- **Production Deployment & Initialization System** (Latest)
+  - **Automatic Database Initialization**: Schema and seed data setup on first startup
+  - **Middleware Integration**: Seamless initialization through Next.js middleware
+  - **Startup Validation System**: Environment, encryption, and system health checks
+  - **Service Health Monitoring**: Graceful error handling with proper HTTP status codes
+  - **Memory Safety Enhancements**: Improved encryption with key cleanup and async operations
+  - **Type System Improvements**: All TypeScript inconsistencies resolved
+  - **Database-Integrated Crawling**: Proper `Crawler.fromDatabaseConfig()` integration
+  - **Enhanced Security**: Better encryption implementation and error handling
+  - **Code Quality**: Zero TypeScript/ESLint errors, full type safety
+- **Database-driven configuration system** with admin management interface
+- **Multi-provider AI system** (OpenAI & Google) with database persistence
 - **Multi-provider embeddings** (OpenAI & Google)
-- **Advanced crawling system** with configurable modes
+- **Database validation and startup system** with graceful degradation
+- **Advanced crawling system** with configurable modes and database integration
 - **Comprehensive error tracking** and partial success handling
+- **Field-level encryption** for sensitive configuration data
+- **Audit logging system** with comprehensive change tracking
 - **Clerk authentication** with admin controls
 - **Distributed rate limiting** with Redis support and smart memory store management
 - **Admin dashboard** with real-time configuration monitoring and memory statistics
 - Context-aware chat interface with streaming responses
 - Context panel with source display and relevance scores
-- Web crawling infrastructure with smart retry logic
+- Web crawling infrastructure with smart retry logic and database status updates
 - Embeddings generation with automatic fallback
-- Demo context system for immediate testing
+- **Graceful degradation modes** (none, demo, readonly, disabled)
+- **Database health monitoring** with response time measurement
 - **Full Pinecone integration** with dynamic index creation
 - Input validation and security sanitization
 - Synchronized timeout management
@@ -202,6 +283,7 @@ npm run dev
 - **Enhanced admin access diagnostics** with comprehensive error logging
 - **Emergency admin bypass mechanisms** for service failure scenarios
 - **Memory store cleanup** with proper handling of invitation and crawl rate limit keys
+- **Transaction support** with rollback capabilities for data integrity
 
 ### 🔄 Ready for Enhancement
 - Advanced context retrieval algorithms
@@ -221,6 +303,17 @@ This is Step 3 of the Forge development. The next steps will include:
 - Performance optimizations and scaling
 
 ## Troubleshooting
+
+### Database Setup Issues
+- **Database Connection Failed**: Check `POSTGRES_URL` environment variable
+- **Schema Setup Failed**: Run `npm run setup-db` to create required tables
+- **Validation Errors**: Use `npm run validate-db-system` to check system status
+- **Model Inconsistency**: Run `npm run verify-models` to check configuration consistency
+
+### Application Degradation
+- **Demo Mode**: Application falls back when database unavailable - check database connection
+- **Readonly Mode**: Partial database setup - run schema setup commands
+- **Health Check**: Visit `/api/health` to see current application status and degradation mode
 
 ### Authentication Issues
 - Ensure `CLERK_SECRET_KEY` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` are set correctly

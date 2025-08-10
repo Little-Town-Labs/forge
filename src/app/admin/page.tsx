@@ -188,17 +188,16 @@ const AdminDashboard: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => router.push("/admin/settings")}
-                  disabled
-                  className="flex items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg opacity-50 cursor-not-allowed text-left"
+                  onClick={() => router.push("/admin/config")}
+                  className="flex items-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors text-left"
                 >
-                  <Settings className="w-8 h-8 text-gray-400 mr-4" />
+                  <Settings className="w-8 h-8 text-purple-600 dark:text-purple-400 mr-4" />
                   <div>
-                    <h3 className="font-semibold text-gray-500 dark:text-gray-400">
-                      System Settings
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                      System Configuration
                     </h3>
-                    <p className="text-sm text-gray-400">
-                      Coming soon - Configure system preferences
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      Configure AI models, knowledge base, and system settings
                     </p>
                   </div>
                 </button>

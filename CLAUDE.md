@@ -10,6 +10,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm start` - Start production server
 - `npm run lint` - Run ESLint
 
+### Database Management
+- `npm run setup-db` - Setup database with schema and seed data
+- `npm run db:setup` - Alias for setup-db
+- `npm run test-setup` - Test database connectivity
+- `npm run validate-db-system` - Validate database validation system
+- `npm run verify-models` - Verify model configuration consistency
+- `npm run test-db-validation` - Test database validation implementation
+
 ### Environment Setup
 Create `.env.local` with:
 ```
@@ -20,6 +28,12 @@ CLERK_SECRET_KEY=your_clerk_secret_key_here
 
 # Required - Admin Configuration
 ADMIN_EMAILS=admin@company.com,manager@company.com
+
+# Required - Database Configuration
+POSTGRES_URL=postgresql://username:password@hostname:port/database
+
+# Optional - Database Configuration Encryption
+CONFIG_ENCRYPTION_KEY=your_32_character_encryption_key_here
 
 # Optional - for Google AI models and embeddings:
 GOOGLE_AI_API_KEY=your_google_ai_api_key_here
@@ -44,23 +58,38 @@ CRAWL_TIMEOUT_MS=600000
 
 ## Architecture Overview
 
-**Forge** is a Next.js 15 chatbot application with context-aware responses using semantic search. The system operates in two modes:
+**Forge** is a Next.js 15 chatbot application with context-aware responses using semantic search and database-driven configuration. The system operates with graceful degradation across multiple modes:
 
-### Demo Mode (Default)
-- Works without Pinecone configuration
-- Returns hardcoded demo context in `src/utils/context.ts:11-30`
+### Operation Modes
+
+#### Full Operation Mode
+- Database fully configured with admin configuration system
+- AI models managed through database-driven configuration
+- RAG crawling with database-backed URL management
+- Complete audit logging and monitoring
+
+#### Demo Mode (Graceful Degradation)
+- Works without database or Pinecone configuration
+- Returns hardcoded demo context in `src/utils/context.ts`
+- Uses fallback AI model configurations
 - Perfect for testing interface and functionality
+- Automatic fallback when database connection fails
 
-### Full Knowledge Base Mode
-- Requires Pinecone configuration
-- Enables web crawling and vector storage
-- Provides real context-aware responses
+#### Readonly Mode (Partial Functionality)
+- Database connected but some schema components missing
+- Limited configuration modifications
+- Read-only access to existing data
+
+#### Disabled Mode (Service Unavailable)
+- Critical database or configuration errors
+- Minimal functionality available
+- Clear error messages and setup instructions
 
 ## AI Provider System
 
 ### Multi-Model Support
-- **OpenAI**: GPT-4o-mini for chat, text-embedding-3-small for embeddings
-- **Google**: Gemini 1.5 Flash for chat, embedding-001 for embeddings
+- **OpenAI**: GPT-5-nano for chat, text-embedding-3-small for embeddings
+- **Google**: Gemini 2.5 Flash for chat, embedding-001 for embeddings
 - **Model Selection**: Users can switch between providers via UI
 - **Automatic Matching**: Chat model selection determines embedding provider
 
@@ -101,11 +130,14 @@ CRAWL_TIMEOUT_MS=600000
 ## Core Components
 
 ### API Architecture (`src/app/api/`)
-- **`/api/chat`** - Main streaming chat endpoint using Vercel AI SDK with multi-provider support
+- **`/api/chat`** - Main streaming chat endpoint using Vercel AI SDK with database-driven model configuration
 - **`/api/context`** - Context retrieval endpoint for frontend display
-- **`/api/crawl`** - Web crawling and indexing endpoint with embedding provider selection
-- **`/api/health`** - Health check endpoint with configuration validation
-- **`/api/admin/config`** - Detailed configuration status (admin-only)
+- **`/api/crawl`** - Web crawling and indexing endpoint with database-backed URL management
+- **`/api/health`** - Health check endpoint with database validation and configuration status
+- **`/api/admin/config`** - Comprehensive admin configuration management system
+  - **`/api/admin/config/models`** - AI model configuration management
+  - **`/api/admin/config/knowledge-base`** - RAG URL configuration management
+  - **`/api/admin/config/models/test`** - AI model connection testing
 - **`/api/admin/rate-limit-status`** - Rate limiting status, memory store statistics, and manual cleanup (admin-only)
 - **`/api/invitations`** - Invitation management with distributed rate limiting
 
@@ -133,19 +165,26 @@ All loading components include comprehensive accessibility features:
 
 ### Utilities (`src/utils/`)
 - **embeddings.ts** - Multi-provider embedding generation (OpenAI & Google)
-- **crawler.ts** - Web scraping with Cheerio and enhanced error tracking
+- **crawler.ts** - Web scraping with Cheerio, enhanced error tracking, and database status integration
 - **documents.ts** - Text chunking and processing
 - **seed.ts** - Knowledge base seeding operations with embedding provider support
 - **admin.ts** - Admin utility functions and validation
-- **startup.ts** - Application startup validation and health checks
+- **startup.ts** - Comprehensive application startup validation with database health checks
+- **degradation.ts** - Graceful degradation mode management and feature availability detection
 - **rateLimiter.ts** - Distributed rate limiting with Redis/memory/disabled modes and admin access diagnostics
 - **errorTracking.ts** - Centralized error tracking with privacy controls
 - **apiResponse.ts** - Standardized API response utilities with error handling
 
+### Database Layer (`src/lib/`)
+- **database.ts** - Database connectivity, schema validation, and health monitoring
+- **config-service.ts** - Database-driven configuration management with encryption and audit logging
+- **encryption.ts** - Field-level encryption for sensitive configuration data
+
 ## Key Dependencies
 - **Vercel AI SDK** (`ai`) - Streaming chat responses
-- **OpenAI SDK** (`@ai-sdk/openai`) - GPT-4o-mini model and embeddings
+- **OpenAI SDK** (`@ai-sdk/openai`) - GPT-5-nano model and embeddings
 - **Google AI SDK** (`@ai-sdk/google`) - Gemini models and embeddings
+- **Vercel Postgres** (`@vercel/postgres`) - Database operations and configuration management
 - **Pinecone** (`@pinecone-database/pinecone`) - Vector database (optional)
 - **Clerk** (`@clerk/nextjs`, `@clerk/backend`) - Authentication and user management
 - **LangChain** (`langchain`) - Document processing and chunking
@@ -199,27 +238,40 @@ The application gracefully handles provider unavailability:
 - **ScoredVector** - Search result with relevance score
 - **EmbeddingProvider** - Provider selection type ('openai' | 'google')
 
-## Startup Validation
+## Database Validation & Startup System
 
-**Forge** includes comprehensive startup validation to catch configuration issues early:
+**Forge** includes a comprehensive database validation and startup system with graceful degradation:
 
-### Automatic Validation
-- Runs during application startup (server-side only)
-- Validates admin configuration, environment variables, and rate limiting
-- Exits application in production if critical errors found
-- Displays colored console output with detailed results
+### Database Validation Features
+- **Connectivity Testing**: Tests database connection health with response time measurement
+- **Schema Validation**: Validates presence of required tables, indexes, and triggers
+- **Data Integrity Checking**: Ensures essential data like default AI models exist
+- **Graceful Degradation**: Automatic fallback to demo mode when database unavailable
+
+### Startup Validation
+- Runs comprehensive validation during application startup
+- Validates admin configuration, environment variables, rate limiting, and database
+- Supports graceful degradation modes: `none`, `demo`, `readonly`, `disabled`
+- Provides clear setup instructions for different failure scenarios
+- Exits application in production only for critical errors
 
 ### Health Check Endpoints
-- **`/api/health`** - Public health check with basic validation status
+- **`/api/health`** - Public health check with database validation status
 - **`/api/admin/config`** - Detailed configuration information (admin-only)
-- Returns HTTP 503 if configuration issues detected
-- Useful for monitoring and debugging
+- Returns appropriate HTTP status codes based on application health
+- Includes degradation mode information and feature availability
 
 ### Validation Components
-1. **Admin Configuration**: Validates `ADMIN_EMAILS` format, count, and security
-2. **Environment Variables**: Checks required and optional variables including Google AI
-3. **Rate Limiting**: Validates rate limiting configuration and Redis setup
-4. **AI Provider Status**: Reports OpenAI and Google AI configuration status
+1. **Database Configuration**: Tests connectivity, schema completeness, and data integrity
+2. **Admin Configuration**: Validates `ADMIN_EMAILS` format, count, and security
+3. **Environment Variables**: Checks required and optional variables including database URLs
+4. **Rate Limiting**: Validates rate limiting configuration and Redis setup
+5. **AI Provider Status**: Reports OpenAI and Google AI configuration status
+
+### Setup Commands
+- `npm run setup-db` - Automated database schema and seed data setup
+- `npm run validate-db-system` - Validate database validation system implementation
+- `npm run verify-models` - Check model configuration consistency between seed data and fallbacks
 
 ## Admin Access & Troubleshooting
 
@@ -250,6 +302,34 @@ When admin users cannot bypass rate limits, the system provides:
 
 ## Recent Updates
 
+### Production Deployment & Initialization System (Latest)
+- ✅ **Automatic Database Initialization**: Production-ready automatic schema and seed data setup on first startup
+- ✅ **Middleware Integration**: Database initialization integrated into Next.js middleware for seamless startup
+- ✅ **Startup Validation System**: Comprehensive environment validation, encryption setup, and system health checks
+- ✅ **Service Health Monitoring**: Graceful error handling with appropriate HTTP status codes when initialization fails
+- ✅ **Initialization API Endpoints**: Admin endpoints (`/api/admin/system/init`) for monitoring and controlling initialization status
+- ✅ **Memory Safety Enhancements**: Improved encryption with explicit key material cleanup and async operations
+- ✅ **Type System Improvements**: Resolved all TypeScript inconsistencies between database schema and interfaces
+- ✅ **Database-Integrated Crawling**: Crawler now properly uses `Crawler.fromDatabaseConfig()` method with status tracking
+- ✅ **Enhanced Security**: Improved encryption implementation with better error handling and security practices
+- ✅ **Code Quality**: All TypeScript and ESLint errors resolved, ensuring type safety throughout the application
+
+### Database-Driven Configuration System
+- ✅ Complete admin configuration system with database-backed AI model management
+- ✅ RAG URL configuration with database persistence and crawl status tracking
+- ✅ Field-level encryption for sensitive configuration data (API keys)
+- ✅ Comprehensive audit logging for all configuration changes
+- ✅ Database schema with proper constraints, indexes, and triggers
+- ✅ Transaction support with rollback capabilities for data integrity
+
+### Database Validation & Startup System
+- ✅ Comprehensive database validation system with connectivity, schema, and data integrity checks
+- ✅ Graceful degradation modes: `none`, `demo`, `readonly`, `disabled`
+- ✅ Startup validation orchestration with clear error messages and setup instructions
+- ✅ Runtime degradation detection and monitoring with automatic fallback
+- ✅ Database health monitoring with response time measurement
+- ✅ Integration examples and middleware for API route protection
+
 ### Multi-Provider AI System
 - ✅ Added Google AI SDK support
 - ✅ Multi-model chat interface with model selection
@@ -267,7 +347,7 @@ When admin users cannot bypass rate limits, the system provides:
 - ✅ Enhanced crawl configuration validation with security bounds
 - ✅ Rich UI error reporting with failed pages and error details
 - ✅ Mode-specific rate limiting with admin bypass functionality
-- ✅ Proper getUserEmail() integration with Clerk authentication
+- ✅ Database integration for crawl status updates and progress tracking
 
 ### Security & Configuration
 - ✅ Removed misleading robots.txt configuration
@@ -275,6 +355,7 @@ When admin users cannot bypass rate limits, the system provides:
 - ✅ Enhanced admin dashboard with real-time configuration display
 - ✅ Server-side environment variable access for security
 - ✅ Improved error messages and user feedback
+- ✅ Database setup automation with verification and rollback capabilities
 
 ### Admin Access & Rate Limiting Enhancements
 - ✅ Enhanced admin access diagnostics with comprehensive error logging
@@ -285,9 +366,10 @@ When admin users cannot bypass rate limits, the system provides:
 - ✅ Smart rate limiting cleanup with proper TTL handling for different key types
 
 ### Enhanced Features
-- ✅ Model selector in chat interface
+- ✅ Model selector in chat interface with database-driven configuration
 - ✅ Embedding provider selector in crawl form
 - ✅ Provider-specific dimension handling
 - ✅ Comprehensive error handling and fallbacks
 - ✅ Updated documentation and validation
 - ✅ Partial success warnings and detailed error displays
+- ✅ Database-driven fallback model configurations for resilient operation

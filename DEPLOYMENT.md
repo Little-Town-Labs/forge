@@ -64,7 +64,7 @@ OPENAI_API_KEY=sk-...
 4. Set usage limits and billing alerts
 
 **Usage Notes:**
-- GPT-4o-mini model used for chat responses
+- GPT-5-nano model used for chat responses
 - text-embedding-3-small for semantic search
 - Monitor usage in OpenAI dashboard
 

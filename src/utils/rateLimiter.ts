@@ -655,7 +655,7 @@ export async function checkCrawlRateLimit(userId: string, crawlMode: string): Pr
     } else {
       // Memory-based rate limiting for crawls
       const hourlyCount = getMemoryCount(hourlyKey);
-      setMemoryCount(hourlyKey, hourlyCount + 1, HOURLY_WINDOW_MS);
+      setMemoryCount(hourlyKey, hourlyCount + 1);
       
       if (hourlyCount >= limits.perHour) {
         return {
@@ -900,7 +900,7 @@ function getMemoryCount(key: string): number {
 /**
  * Set count in memory store with TTL
  */
-function setMemoryCount(key: string, count: number, _ttl: number): void {
+function setMemoryCount(key: string, count: number): void {
   const now = Date.now();
   memoryStore.set(key, {
     count: 0, // Not used for crawl limits
