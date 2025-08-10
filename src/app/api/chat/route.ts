@@ -286,5 +286,5 @@ AI assistant will not invent anything that is not drawn directly from the contex
   }
 }
 
-// Export cache management for testing and debugging
-export { clearModelCache }; 
+// Cache management function available internally
+// Note: clearModelCache is available as a local function for internal use 
