@@ -42,7 +42,7 @@ function validateUrl(url: string, allowedProtocols: string[] = ['http', 'https']
     if (parsed.protocol === 'http:' && parsed.hostname !== 'localhost') {
       result.warnings.push('Using HTTP instead of HTTPS may be insecure');
     }
-  } catch (error) {
+  } catch {
     result.isValid = false;
     result.errors.push('Invalid URL format');
   }
@@ -289,15 +289,17 @@ export const ENV_VAR_DEFINITIONS: EnvVarValidation[] = [
 /**
  * Comprehensive environment variable validation
  */
+interface EnvValidationResult {
+  present: boolean;
+  required: boolean;
+  validation?: ValidationResult;
+  category: string;
+  description: string;
+}
+
 export function validateEnvironmentVariables(): {
   isValid: boolean;
-  results: Record<string, {
-    present: boolean;
-    required: boolean;
-    validation?: ValidationResult;
-    category: string;
-    description: string;
-  }>;
+  results: Record<string, EnvValidationResult>;
   summary: {
     totalRequired: number;
     requiredPresent: number;
@@ -309,7 +311,7 @@ export function validateEnvironmentVariables(): {
   };
   overallHealth: 'healthy' | 'warning' | 'critical';
 } {
-  const results: Record<string, any> = {};
+  const results: Record<string, EnvValidationResult> = {};
   let criticalErrors = 0;
   let warnings = 0;
   let recommendations = 0;

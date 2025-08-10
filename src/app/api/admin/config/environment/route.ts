@@ -259,7 +259,16 @@ function getCategoryDescription(category: string): string {
   return descriptions[category as keyof typeof descriptions] || 'Configuration settings';
 }
 
-function getCategoryHealth(results: any[]): 'healthy' | 'warning' | 'critical' {
+interface CategoryResult {
+  present: boolean;
+  required: boolean;
+  validation?: {
+    errors: string[];
+    warnings: string[];
+  };
+}
+
+function getCategoryHealth(results: CategoryResult[]): 'healthy' | 'warning' | 'critical' {
   const errors = results.reduce((sum, r) => sum + (r.validation?.errors?.length || 0), 0);
   const warnings = results.reduce((sum, r) => sum + (r.validation?.warnings?.length || 0), 0);
   const requiredMissing = results.filter(r => r.required && !r.present).length;
@@ -269,10 +278,21 @@ function getCategoryHealth(results: any[]): 'healthy' | 'warning' | 'critical' {
   return 'healthy';
 }
 
-function getCriticalSecurityIssues(validation: any): string[] {
+interface ValidationResults {
+  results: Record<string, {
+    required: boolean;
+    present: boolean;
+    validation?: {
+      isValid: boolean;
+      errors: string[];
+    };
+  }>;
+}
+
+function getCriticalSecurityIssues(validation: ValidationResults): string[] {
   const issues: string[] = [];
   
-  for (const [varName, result] of Object.entries(validation.results) as [string, any][]) {
+  for (const [varName, result] of Object.entries(validation.results)) {
     if (result.required && !result.present) {
       issues.push(`Required variable ${varName} is missing`);
     }
@@ -331,7 +351,7 @@ function getProductionReadinessChecks(): {
   };
 }
 
-function getSensitiveVariablesStatus(validation: any): {
+function getSensitiveVariablesStatus(validation: ValidationResults): {
   total: number;
   configured: number;
   secure: number;
@@ -369,17 +389,23 @@ function getSensitiveVariablesStatus(validation: any): {
   };
 }
 
-function generateActionItems(validation: any, recommendations: string[]): Array<{
+function generateActionItems(validation: ValidationResults, recommendations: string[]): Array<{
   priority: 'high' | 'medium' | 'low';
   category: string;
   title: string;
   description: string;
   action: string;
 }> {
-  const items: any[] = [];
+  const items: Array<{
+    priority: 'high' | 'medium' | 'low';
+    category: string;
+    title: string;
+    description: string;
+    action: string;
+  }> = [];
   
   // Critical errors get high priority
-  for (const [varName, result] of Object.entries(validation.results) as [string, any][]) {
+  for (const [varName, result] of Object.entries(validation.results)) {
     if (result.required && !result.present) {
       items.push({
         priority: 'high',

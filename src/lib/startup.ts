@@ -7,7 +7,7 @@
 
 import { ensureDatabaseInitialized } from './database-init';
 import { validateEncryptionKey, testEncryption } from './encryption';
-import { runMigrationsWithBackup, getMigrationStatus } from './migration-runner';
+import { runMigrationsWithBackup } from './migration-runner';
 
 interface StartupResult {
   success: boolean;

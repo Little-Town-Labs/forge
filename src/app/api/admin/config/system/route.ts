@@ -17,14 +17,35 @@ import {
   getSecurityRecommendations 
 } from "@/utils/env-validation";
 
+// Define types for migration functions
+interface MigrationStatus {
+  currentVersion: number;
+  availableMigrations: number;
+  pendingMigrations: number;
+  appliedMigrations: unknown[];
+  integrityCheck: { isValid: boolean; errors: string[] };
+  error?: string;
+}
+
+interface MigrationResult {
+  success: boolean;
+  migrationsApplied: number;
+  backupId?: number;
+}
+
 // Conditional import for migration functions with graceful fallback
-let getMigrationStatus: ((options?: any) => Promise<any>) | null = null;
-let runMigrationsWithBackup: ((appliedBy: string) => Promise<any>) | null = null;
+let getMigrationStatus: ((options?: unknown) => Promise<MigrationStatus>) | null = null;
+let runMigrationsWithBackup: ((appliedBy: string) => Promise<MigrationResult>) | null = null;
 
 try {
-  const migrationModule = require("@/lib/migration-runner");
-  getMigrationStatus = migrationModule.getMigrationStatus;
-  runMigrationsWithBackup = migrationModule.runMigrationsWithBackup;
+  // Use dynamic import instead of require
+  import("@/lib/migration-runner").then((migrationModule) => {
+    getMigrationStatus = migrationModule.getMigrationStatus;
+    runMigrationsWithBackup = migrationModule.runMigrationsWithBackup;
+  }).catch((importError) => {
+    console.warn("Migration runner not available:", importError instanceof Error ? importError.message : "Unknown error");
+    console.warn("Migration-related endpoints will return graceful error messages");
+  });
 } catch (importError) {
   console.warn("Migration runner not available:", importError instanceof Error ? importError.message : "Unknown error");
   console.warn("Migration-related endpoints will return graceful error messages");
@@ -62,7 +83,7 @@ export async function GET() {
       testEncryption(),
       // Gracefully handle migration status
       getMigrationStatus ? 
-        getMigrationStatus().catch((error: any) => ({
+        getMigrationStatus().catch((error: unknown) => ({
           currentVersion: 0,
           availableMigrations: 0,
           pendingMigrations: 0,

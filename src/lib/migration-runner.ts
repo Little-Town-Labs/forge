@@ -79,7 +79,7 @@ async function discoverMigrations(): Promise<Migration[]> {
     }
     
     return migrations.sort((a, b) => a.version - b.version);
-  } catch (error) {
+  } catch {
     console.log('[MIGRATION] No migrations directory found or no migrations to apply');
     return [];
   }
@@ -97,7 +97,7 @@ async function getAppliedMigrations(): Promise<AppliedMigration[]> {
     `;
     
     return result.rows as AppliedMigration[];
-  } catch (error) {
+  } catch {
     // If schema_migrations table doesn't exist, return empty array
     console.log('[MIGRATION] Schema migrations table not found - this may be a new installation');
     return [];

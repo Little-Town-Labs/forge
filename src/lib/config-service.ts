@@ -9,8 +9,7 @@ import { sql, withRetry, withTransaction, getDatabaseStats as getDbStats } from 
 import { encryptApiKey, decryptApiKey, maskApiKey } from './encryption';
 import { 
   InputSanitizer, 
-  SecureQuery, 
-  SecureQueryExecutor 
+  SecureQuery
 } from './query-security';
 import type { 
   AiModelConfig, 
