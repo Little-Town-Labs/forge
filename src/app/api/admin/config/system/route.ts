@@ -37,19 +37,20 @@ interface MigrationResult {
 let getMigrationStatus: ((options?: unknown) => Promise<MigrationStatus>) | null = null;
 let runMigrationsWithBackup: ((appliedBy: string) => Promise<MigrationResult>) | null = null;
 
-try {
-  // Use dynamic import instead of require
-  import("@/lib/migration-runner").then((migrationModule) => {
+// Use async function to handle dynamic imports properly
+async function initializeMigrationFunctions() {
+  try {
+    const migrationModule = await import("@/lib/migration-runner");
     getMigrationStatus = migrationModule.getMigrationStatus;
     runMigrationsWithBackup = migrationModule.runMigrationsWithBackup;
-  }).catch((importError) => {
+  } catch (importError) {
     console.warn("Migration runner not available:", importError instanceof Error ? importError.message : "Unknown error");
     console.warn("Migration-related endpoints will return graceful error messages");
-  });
-} catch (importError) {
-  console.warn("Migration runner not available:", importError instanceof Error ? importError.message : "Unknown error");
-  console.warn("Migration-related endpoints will return graceful error messages");
+  }
 }
+
+// Initialize migration functions
+initializeMigrationFunctions();
 
 /**
  * GET /api/admin/config/system - Get comprehensive system status

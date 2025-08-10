@@ -69,10 +69,17 @@ export async function GET() {
       
       categories: Object.keys(envCategories).map(category => {
         const vars = envCategories[category];
-        const categoryResults = vars.map(v => ({
-          name: v.name,
-          ...envValidation.results[v.name]
-        }));
+        const categoryResults = vars.map(v => {
+          const result = envValidation.results[v.name];
+          return {
+            name: v.name,
+            present: result.present,
+            required: result.required,
+            category: result.category,
+            description: result.description,
+            validation: result.validation
+          };
+        });
         
         const configured = categoryResults.filter(r => r.present).length;
         const required = vars.filter(v => v.required).length;

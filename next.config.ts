@@ -40,14 +40,14 @@ const nextConfig: NextConfig = {
   
   // ESLint configuration for deployment
   eslint: {
-    // Temporarily allow builds to complete - we'll fix linting issues separately
-    ignoreDuringBuilds: true,
+    // ESLint issues converted to warnings in eslint.config.mjs
+    ignoreDuringBuilds: false,
   },
   
   // TypeScript configuration
   typescript: {
-    // Temporarily allow builds to complete - we'll fix TypeScript issues separately
-    ignoreBuildErrors: true,
+    // TypeScript issues should be resolved now
+    ignoreBuildErrors: false,
   },
 };
 
