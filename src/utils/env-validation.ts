@@ -5,7 +5,7 @@
  * detailed error messages, security checks, and configuration recommendations.
  */
 
-interface ValidationResult {
+export interface ValidationResult {
   isValid: boolean;
   errors: string[];
   warnings: string[];

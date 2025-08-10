@@ -12,7 +12,8 @@ import {
   validateEnvironmentVariables, 
   getEnvironmentVariablesByCategory,
   getSecurityRecommendations,
-  ENV_VAR_DEFINITIONS
+  ENV_VAR_DEFINITIONS,
+  type ValidationResult
 } from "@/utils/env-validation";
 import { writeAuditLog } from "@/lib/config-service";
 
@@ -192,7 +193,12 @@ export async function POST(request: NextRequest) {
         }
         
         const value = process.env[body.variableName];
-        let validation = { isValid: true, errors: [], warnings: [], recommendations: [] };
+        let validation: ValidationResult = { 
+          isValid: true, 
+          errors: [], 
+          warnings: [], 
+          recommendations: [] 
+        };
         
         if (value && varDef.validator) {
           validation = varDef.validator(value);
