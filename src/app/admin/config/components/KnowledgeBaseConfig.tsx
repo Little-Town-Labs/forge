@@ -98,55 +98,6 @@ const KnowledgeBaseConfig: React.FC = () => {
     setTimeout(() => setLastSuccessOperation(null), 5000);
   }, []);
 
-  // Retry function for failed operations
-  const retryOperation = (operationType: ErrorState['type']) => {
-    clearError();
-    
-    switch (operationType) {
-      case 'fetch':
-        fetchUrls(true);
-        break;
-      case 'network':
-        fetchUrls(true);
-        break;
-      default:
-        // For other operations, just clear the error
-        break;
-    }
-  };
-
-  useEffect(() => {
-    fetchUrls();
-    // Set up polling for active crawls
-    const interval = setInterval(() => {
-      const activeCrawls = urls.filter(url => url.crawlStatus === 'in_progress');
-      if (activeCrawls.length > 0) {
-        fetchUrls();
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [urls, fetchUrls]);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Escape to close form
-      if (e.key === 'Escape' && showForm && !loadingState.submitting) {
-        resetForm();
-      }
-      
-      // Ctrl/Cmd + R to refresh
-      if ((e.ctrlKey || e.metaKey) && e.key === 'r' && !loadingState.refreshing) {
-        e.preventDefault();
-        fetchUrls(true);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [showForm, loadingState.submitting, loadingState.refreshing, fetchUrls]);
-
   const fetchUrls = useCallback(async (isRefresh = false) => {
     try {
       // Set appropriate loading state
@@ -206,6 +157,55 @@ const KnowledgeBaseConfig: React.FC = () => {
       }));
     }
   }, [showSuccess, clearError, showError]);
+
+  // Retry function for failed operations
+  const retryOperation = (operationType: ErrorState['type']) => {
+    clearError();
+    
+    switch (operationType) {
+      case 'fetch':
+        fetchUrls(true);
+        break;
+      case 'network':
+        fetchUrls(true);
+        break;
+      default:
+        // For other operations, just clear the error
+        break;
+    }
+  };
+
+  useEffect(() => {
+    fetchUrls();
+    // Set up polling for active crawls
+    const interval = setInterval(() => {
+      const activeCrawls = urls.filter(url => url.crawlStatus === 'in_progress');
+      if (activeCrawls.length > 0) {
+        fetchUrls();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [urls, fetchUrls]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to close form
+      if (e.key === 'Escape' && showForm && !loadingState.submitting) {
+        resetForm();
+      }
+      
+      // Ctrl/Cmd + R to refresh
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r' && !loadingState.refreshing) {
+        e.preventDefault();
+        fetchUrls(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showForm, loadingState.submitting, loadingState.refreshing, fetchUrls]);
 
   const validateForm = (): boolean => {
     const errors: {[key: string]: string} = {};

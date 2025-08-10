@@ -183,6 +183,10 @@ const AuditLogsViewer: React.FC = () => {
     return String(value);
   };
 
+  const hasValue = (value: unknown): boolean => {
+    return value !== null && value !== undefined;
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -478,9 +482,9 @@ const AuditLogsViewer: React.FC = () => {
                             </div>
                             
                             {/* Value Changes */}
-                            {(entry.oldValue || entry.newValue) && (
+                            {(hasValue(entry.oldValue) || hasValue(entry.newValue)) && (
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {entry.oldValue && (
+                                {hasValue(entry.oldValue) && (
                                   <div>
                                     <span className="font-medium text-gray-700 dark:text-gray-300">Old Value:</span>
                                     <pre className="text-xs text-gray-600 dark:text-gray-400 mt-1 bg-white dark:bg-gray-800 p-2 rounded border overflow-auto max-h-32">
@@ -488,7 +492,7 @@ const AuditLogsViewer: React.FC = () => {
                                     </pre>
                                   </div>
                                 )}
-                                {entry.newValue && (
+                                {hasValue(entry.newValue) && (
                                   <div>
                                     <span className="font-medium text-gray-700 dark:text-gray-300">New Value:</span>
                                     <pre className="text-xs text-gray-600 dark:text-gray-400 mt-1 bg-white dark:bg-gray-800 p-2 rounded border overflow-auto max-h-32">
