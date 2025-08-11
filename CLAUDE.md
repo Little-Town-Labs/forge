@@ -85,6 +85,20 @@ CRAWL_TIMEOUT_MS=600000
 - Minimal functionality available
 - Clear error messages and setup instructions
 
+## Client-Side Security Architecture
+
+### Environment Variable Protection
+- **Server-Side Only**: Sensitive environment variables like `ADMIN_EMAILS` are never exposed to the client
+- **API-Based Validation**: Admin status checking happens through `/api/admin/status` endpoint
+- **Secure Components**: Client components use API calls instead of direct environment variable access
+- **No Client-Side Admin Logic**: All admin validation logic remains server-side for security
+
+### Admin Access Control
+- **Header Component**: Uses `/api/admin/status` to check admin privileges
+- **AdminGuard Component**: Server-side admin validation through API endpoints
+- **useAdminStatus Hook**: Secure admin status checking without exposing server variables
+- **Protected Routes**: Admin-only content wrapped with secure validation
+
 ## AI Provider System
 
 ### Multi-Model Support
@@ -389,6 +403,14 @@ When admin users cannot bypass rate limits, the system provides:
 - ✅ Improved error messages and user feedback
 - ✅ Database setup automation with verification and rollback capabilities
 
+### Client-Side Security & Environment Variable Protection
+- ✅ **Fixed Client-Side Environment Variable Access**: Eliminated `ADMIN_EMAILS environment variable not set` console errors
+- ✅ **Secure Admin Validation**: Moved all admin validation to server-side API endpoints
+- ✅ **New Admin Status API**: Created `/api/admin/status` endpoint for secure admin privilege checking
+- ✅ **Updated Client Components**: Header, AdminGuard, and useAdminStatus hook now use API calls instead of client-side validation
+- ✅ **Environment Variable Security**: Sensitive variables like `ADMIN_EMAILS` are never exposed to client-side code
+- ✅ **Maintained Functionality**: All admin features work exactly the same, but now securely
+
 ### Admin Access & Rate Limiting Enhancements
 - ✅ Enhanced admin access diagnostics with comprehensive error logging
 - ✅ Emergency admin bypass fallback mechanism using `EMERGENCY_ADMIN_USER_IDS`
@@ -405,3 +427,37 @@ When admin users cannot bypass rate limits, the system provides:
 - ✅ Updated documentation and validation
 - ✅ Partial success warnings and detailed error displays
 - ✅ Database-driven fallback model configurations for resilient operation
+
+## Troubleshooting
+
+### Common Issues & Solutions
+
+#### Client-Side Environment Variable Errors
+**Problem**: Console shows `ADMIN_EMAILS environment variable not set` error
+**Solution**: This has been fixed! The application now uses server-side API endpoints for admin validation
+**What Changed**: 
+- Client components no longer access `process.env.ADMIN_EMAILS` directly
+- Admin validation happens through `/api/admin/status` API endpoint
+- All admin functionality remains intact but is now secure
+
+#### Admin Panel 503 Errors
+**Problem**: `/api/admin/config/models` returns 503 Service Unavailable
+**Solution**: This was caused by client-side admin validation failures and has been resolved
+**What Changed**:
+- Admin status checking moved to server-side API endpoints
+- Client components use secure API calls instead of direct environment variable access
+- Admin panel should now load correctly without 503 errors
+
+#### Admin Access Issues
+**Problem**: Admin users cannot access admin features
+**Solution**: Check the following:
+1. Ensure your email is in the `ADMIN_EMAILS` environment variable on Vercel
+2. Verify Clerk authentication is working correctly
+3. Check that the `/api/admin/status` endpoint is accessible
+4. Review browser console for any remaining errors
+
+### Environment Variable Best Practices
+- **Server-Side Only**: Never expose sensitive environment variables to client-side code
+- **API-Based Access**: Use API endpoints for any server-side data that clients need
+- **Secure Validation**: Keep all validation logic server-side
+- **Client-Side Safety**: Client components should only make API calls, never access `process.env` directly

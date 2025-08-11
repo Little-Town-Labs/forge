@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { isAdmin } from "@/utils/admin";
 import { Shield, AlertCircle } from "lucide-react";
 
 interface AdminGuardProps {
@@ -37,18 +36,45 @@ const AdminGuard: React.FC<AdminGuardProps> = ({
       return; // Still loading user data
     }
 
-    const userEmail = user?.emailAddresses?.[0]?.emailAddress;
-    const adminStatus = isAdmin(userEmail);
-    
-    setHasAccess(adminStatus);
-    setIsChecking(false);
+    if (!user) {
+      setHasAccess(false);
+      setIsChecking(false);
+      return;
+    }
 
-    // Redirect non-admin users if no custom handling is specified
-    if (!adminStatus && !showAccessDenied && !fallback) {
+    // Check admin status using API endpoint
+    const checkAdminStatus = async () => {
+      try {
+        const response = await fetch('/api/admin/status');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setHasAccess(data.data.isAdmin);
+          } else {
+            setHasAccess(false);
+          }
+        } else {
+          setHasAccess(false);
+        }
+      } catch (error) {
+        console.warn('Failed to check admin status:', error);
+        setHasAccess(false);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [isLoaded, user, router, redirectTo, showAccessDenied, fallback]);
+
+  // Handle redirect for non-admin users
+  useEffect(() => {
+    if (!isChecking && !hasAccess && !showAccessDenied && !fallback) {
+      const userEmail = user?.emailAddresses?.[0]?.emailAddress;
       console.warn(`AdminGuard: Access denied for user ${userEmail}, redirecting to ${redirectTo}`);
       router.push(redirectTo);
     }
-  }, [isLoaded, user, router, redirectTo, showAccessDenied, fallback]);
+  }, [isChecking, hasAccess, showAccessDenied, fallback, redirectTo, router, user]);
 
   // Show loading state while checking authentication and admin status
   if (!isLoaded || isChecking) {
@@ -152,14 +178,54 @@ export const useAdminStatus = () => {
       return;
     }
 
-    const userEmail = user?.emailAddresses?.[0]?.emailAddress || null;
-    const adminStatus = isAdmin(userEmail);
+    if (!user) {
+      setAdminInfo({
+        isAdmin: false,
+        isLoading: false,
+        userEmail: null,
+      });
+      return;
+    }
 
-    setAdminInfo({
-      isAdmin: adminStatus,
-      isLoading: false,
-      userEmail,
-    });
+    const userEmail = user?.emailAddresses?.[0]?.emailAddress || null;
+    
+    // Check admin status using API endpoint
+    const checkAdminStatus = async () => {
+      try {
+        const response = await fetch('/api/admin/status');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setAdminInfo({
+              isAdmin: data.data.isAdmin,
+              isLoading: false,
+              userEmail,
+            });
+          } else {
+            setAdminInfo({
+              isAdmin: false,
+              isLoading: false,
+              userEmail,
+            });
+          }
+        } else {
+          setAdminInfo({
+            isAdmin: false,
+            isLoading: false,
+            userEmail,
+          });
+        }
+      } catch (error) {
+        console.warn('Failed to check admin status:', error);
+        setAdminInfo({
+          isAdmin: false,
+          isLoading: false,
+          userEmail,
+        });
+      }
+    };
+
+    checkAdminStatus();
   }, [isLoaded, user]);
 
   return adminInfo;

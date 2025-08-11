@@ -75,10 +75,13 @@ The Forge application now features an **integrated admin panel** that provides s
 ### Security
 
 The integrated admin panel maintains the same security standards as the standalone admin dashboard:
-- Admin-only access through Clerk authentication
-- Email-based admin verification
-- Comprehensive audit logging of all changes
-- Secure API key management with encryption
+- **Admin-only access through Clerk authentication**
+- **Email-based admin verification**
+- **Comprehensive audit logging of all changes**
+- **Secure API key management with encryption**
+- **Client-side security**: Sensitive environment variables like `ADMIN_EMAILS` are never exposed to the client
+- **Server-side validation**: All admin validation happens through secure API endpoints
+- **Protected components**: Client components use API calls instead of direct environment variable access
 
 ## Admin Setup
 
@@ -102,6 +105,31 @@ Access admin functions directly from the chat interface:
 3. Access admin functions through either interface
 4. Configure AI models and knowledge base URLs
 5. Monitor system health and audit logs
+
+## Security Architecture
+
+### Client-Side Security
+The application implements a secure architecture that protects sensitive information:
+
+- **Environment Variable Protection**: Sensitive variables like `ADMIN_EMAILS` are never exposed to client-side code
+- **API-Based Validation**: All admin validation happens through secure server-side API endpoints
+- **Secure Components**: Client components (Header, AdminGuard, etc.) use API calls instead of direct environment variable access
+- **No Client-Side Admin Logic**: All admin validation logic remains server-side for maximum security
+
+### Admin Access Control
+Admin functionality is secured through multiple layers:
+
+- **Authentication**: Clerk handles user authentication and session management
+- **Authorization**: Server-side API endpoints validate admin privileges using environment variables
+- **API Security**: Admin status checking through `/api/admin/status` endpoint
+- **Component Protection**: AdminGuard component wraps admin-only content with secure validation
+- **Audit Logging**: All admin actions are logged for security monitoring
+
+### Security Best Practices
+- **Server-Side Only**: Never expose sensitive environment variables to client-side code
+- **API-Based Access**: Use API endpoints for any server-side data that clients need
+- **Secure Validation**: Keep all validation logic server-side
+- **Client-Side Safety**: Client components should only make API calls, never access `process.env` directly
 
 ## Getting Started
 
@@ -376,6 +404,28 @@ This is Step 3 of the Forge development. The next steps will include:
 
 ## Troubleshooting
 
+### Client-Side Environment Variable Issues ✅ RESOLVED
+**Problem**: Console shows `ADMIN_EMAILS environment variable not set` error
+**Status**: ✅ **FIXED** - This issue has been completely resolved
+**What Was Fixed**:
+- Client components no longer access `process.env.ADMIN_EMAILS` directly
+- Admin validation now happens through secure server-side API endpoints
+- New `/api/admin/status` endpoint provides secure admin status checking
+- All admin functionality remains intact but is now secure
+
+**Components Updated**:
+- Header component now uses API calls instead of client-side validation
+- AdminGuard component uses server-side admin validation
+- useAdminStatus hook securely checks admin status through API
+
+### Admin Panel 503 Errors ✅ RESOLVED
+**Problem**: `/api/admin/config/models` returns 503 Service Unavailable
+**Status**: ✅ **FIXED** - This was caused by client-side admin validation failures
+**What Was Fixed**:
+- Admin status checking moved to server-side API endpoints
+- Client components use secure API calls instead of direct environment variable access
+- Admin panel should now load correctly without 503 errors
+
 ### Database Setup Issues
 - **Database Connection Failed**: Check `POSTGRES_URL` environment variable
 - **Schema Setup Failed**: Run `npm run setup-db` to create required tables
@@ -413,6 +463,11 @@ When admin users cannot bypass rate limits or access admin features:
    - Reports admin configuration issues
    - Shows Clerk API connectivity status
    - Provides actionable troubleshooting steps
+
+4. **Admin Status API**: Check `/api/admin/status` endpoint for admin privilege validation
+   - Secure server-side admin status checking
+   - No client-side environment variable access
+   - Proper error handling and authentication validation
 
 ### Context Not Loading
 - Check that your OpenAI API key is set correctly
@@ -488,7 +543,35 @@ If Pinecone is not configured or there are issues, the application will automati
 
 ## Recent Architectural Improvements
 
-### Component Architecture & Communication (Latest Update)
+### Client-Side Security & Environment Variable Protection (Latest Update)
+
+The application has undergone significant security improvements to protect sensitive environment variables and enhance client-side security:
+
+#### ✅ Environment Variable Security
+- **Eliminated Client-Side Access**: Fixed `ADMIN_EMAILS environment variable not set` console errors
+- **Server-Side Only**: Sensitive environment variables like `ADMIN_EMAILS` are never exposed to client-side code
+- **Secure Admin Validation**: All admin validation logic moved to server-side API endpoints
+- **API-Based Architecture**: Client components now use secure API calls instead of direct environment variable access
+
+#### ✅ New Admin Status API
+- **Secure Endpoint**: Created `/api/admin/status` endpoint for admin privilege checking
+- **Server-Side Validation**: Admin status validation happens securely on the server
+- **Proper Authentication**: Full Clerk authentication integration with proper error handling
+- **No Information Leakage**: API responses contain only necessary information without exposing server internals
+
+#### ✅ Updated Client Components
+- **Header Component**: Now uses `/api/admin/status` API instead of client-side `isAdmin()` calls
+- **AdminGuard Component**: Secure server-side admin validation through API endpoints
+- **useAdminStatus Hook**: Secure admin status checking without exposing server variables
+- **Protected Routes**: Admin-only content wrapped with secure validation
+
+#### ✅ Security Benefits
+- **No More Console Errors**: Eliminated environment variable access errors in browser console
+- **Enhanced Security**: Admin logic remains server-side where it belongs
+- **Maintained Functionality**: All admin features work exactly the same, but now securely
+- **Better Architecture**: Clean separation between client and server responsibilities
+
+### Component Architecture & Communication (Previous Update)
 
 The Forge application has undergone significant architectural improvements to enhance maintainability, type safety, and component communication:
 

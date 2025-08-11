@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { UserButton, SignInButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { isAdmin } from "@/utils/admin";
 import { Settings } from "lucide-react";
 
 interface HeaderProps {
@@ -24,12 +23,33 @@ const Header: React.FC<HeaderProps> = ({
   const [userIsAdmin, setUserIsAdmin] = useState(false);
   const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
 
-  // Check admin status when user data loads
+  // Check admin status when user data loads using API endpoint
   useEffect(() => {
-    if (isLoaded) {
-      const userEmail = user?.emailAddresses?.[0]?.emailAddress;
-      const adminStatus = isAdmin(userEmail);
-      setUserIsAdmin(adminStatus);
+    if (isLoaded && user) {
+      const checkAdminStatus = async () => {
+        try {
+          const response = await fetch('/api/admin/status');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              setUserIsAdmin(data.data.isAdmin);
+            } else {
+              setUserIsAdmin(false);
+            }
+          } else {
+            setUserIsAdmin(false);
+          }
+        } catch (error) {
+          console.warn('Failed to check admin status:', error);
+          setUserIsAdmin(false);
+        } finally {
+          setIsCheckingAdmin(false);
+        }
+      };
+
+      checkAdminStatus();
+    } else if (isLoaded && !user) {
+      setUserIsAdmin(false);
       setIsCheckingAdmin(false);
     }
   }, [isLoaded, user]);

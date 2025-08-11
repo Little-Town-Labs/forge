@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { isAdmin } from '../utils/admin';
+import { useUser } from '@clerk/nextjs';
 
 interface UseAdminStatusReturn {
   isAdmin: boolean;
@@ -11,32 +11,50 @@ interface UseAdminStatusReturn {
 }
 
 export const useAdminStatus = (): UseAdminStatusReturn => {
+  const { user, isLoaded } = useUser();
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!user) {
+      setUserEmail(null);
+      setIsAdminUser(false);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
+    const currentUserEmail = user?.emailAddresses?.[0]?.emailAddress || null;
+    setUserEmail(currentUserEmail);
+
     const checkAdminStatus = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // Get user email from localStorage or session storage
-        // This assumes the user email is stored during authentication
-        const storedEmail = localStorage.getItem('user-email') || 
-                           sessionStorage.getItem('user-email') ||
-                           null;
-
-        setUserEmail(storedEmail);
-
-        // Check if user is admin using the utility function
-        const adminStatus = isAdmin(storedEmail);
-        setIsAdminUser(adminStatus);
+        // Check admin status using API endpoint
+        const response = await fetch('/api/admin/status');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setIsAdminUser(data.data.isAdmin);
+          } else {
+            setIsAdminUser(false);
+          }
+        } else {
+          setIsAdminUser(false);
+        }
 
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to check admin status');
         console.error('Error checking admin status:', err);
+        setIsAdminUser(false);
       } finally {
         setIsLoading(false);
       }
@@ -58,7 +76,7 @@ export const useAdminStatus = (): UseAdminStatusReturn => {
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(interval);
     };
-  }, []);
+  }, [isLoaded, user]);
 
   return {
     isAdmin: isAdminUser,
