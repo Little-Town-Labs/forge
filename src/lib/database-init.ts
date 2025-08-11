@@ -5,7 +5,7 @@
  * when the application starts up in production environments.
  */
 
-import { sql } from './database';
+import { sql, executeQuery } from './database';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -59,7 +59,8 @@ async function executeSQLFile(filename: string, description: string): Promise<vo
     for (const statement of statements) {
       if (statement.trim()) {
         try {
-          await sql.unsafe(statement);
+          // Execute raw SQL statement using executeQuery
+          await executeQuery(statement);
         } catch (error) {
           // Log but don't fail on "already exists" errors
           if (error instanceof Error && 

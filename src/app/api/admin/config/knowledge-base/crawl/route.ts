@@ -196,8 +196,8 @@ export async function POST(request: NextRequest) {
     } catch (crawlError) {
       // Handle specific error cases
       let errorMessage = 'Crawl operation failed';
-      let errorCode = ErrorCodes.INTERNAL_ERROR;
-      let httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+      let errorCode: typeof ErrorCodes[keyof typeof ErrorCodes] = ErrorCodes.INTERNAL_ERROR;
+      let httpStatus: typeof HttpStatus[keyof typeof HttpStatus] = HttpStatus.INTERNAL_SERVER_ERROR;
 
       if (crawlError instanceof Error) {
         if (crawlError.message.includes('API_TIMEOUT') || crawlError.message.includes('timeout')) {

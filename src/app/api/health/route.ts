@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
  */
 export async function GET() {
   try {
-    const validationStatus = getValidationStatus();
+    const validationStatus = await getValidationStatus();
     
     const response = {
       status: validationStatus.isHealthy ? "healthy" : "unhealthy",

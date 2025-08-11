@@ -5,7 +5,6 @@
  * configuration data stored in the Vercel Postgres database.
  */
 
-// @ts-expect-error - Package will be installed during deployment
 import * as bcrypt from 'bcryptjs';
 import { createHash, createCipheriv, createDecipheriv, randomBytes, pbkdf2Sync } from 'crypto';
 

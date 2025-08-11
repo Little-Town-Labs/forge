@@ -32,7 +32,7 @@ export async function initializeApplication(): Promise<{
     globalDegradationDetector.updateMode(result.degradationMode);
 
     // Log application state
-    const appState = getApplicationState(result.degradationMode, result.databaseValidation);
+    const appState = getApplicationState(result.degradationMode);
     console.log(`Application initialized in ${result.degradationMode.toUpperCase()} mode`);
     
     if (appState.limitations.length > 0) {

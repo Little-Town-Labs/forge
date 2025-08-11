@@ -113,8 +113,8 @@ async function executeMigration(migration: Migration, appliedBy: string): Promis
   console.log(`[MIGRATION] Applying migration ${migration.version}: ${migration.name}...`);
   
   try {
-    // Execute the migration SQL
-    await sql.unsafe(content);
+    // Execute the migration SQL using the proper query method
+    await sql.query(content);
     
     // Record successful application (the migration should insert its own record,
     // but we'll update it with additional metadata)

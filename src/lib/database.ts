@@ -5,12 +5,25 @@
  * admin configuration system using Vercel Postgres.
  */
 
-// @ts-expect-error - Package will be installed during deployment
 import { sql } from '@vercel/postgres';
-// @ts-expect-error - Package will be installed during deployment  
-import type { VercelPostgresClient } from '@vercel/postgres';
 
-// Database connection health status
+// Type definitions for better type safety
+interface DatabaseRow {
+  [key: string]: unknown;
+}
+
+interface TableRow {
+  table_name: string;
+}
+
+interface IndexRow {
+  indexname: string;
+}
+
+interface TriggerRow {
+  trigger_name: string;
+}
+
 interface DatabaseHealth {
   connected: boolean;
   responseTime: number;
@@ -84,7 +97,8 @@ export async function query<T = unknown>(
   const queryString = template.join('?');
   
   try {
-    const result = await sql(template, ...values);
+    // Type assertion for values to handle the unknown type properly
+    const result = await sql(template, ...(values as any[]));
     
     const duration = Date.now() - startTime;
     logQuery(queryString, values, duration);
@@ -378,37 +392,37 @@ async function validateDatabaseSchema(): Promise<{
   triggersExist: boolean;
   missingTriggers: string[];
 }> {
-  // Check tables
+  // Check tables - use proper SQL syntax for array checking
   const tablesResult = await sql`
     SELECT table_name 
     FROM information_schema.tables 
     WHERE table_schema = 'public' 
-    AND table_name = ANY(${REQUIRED_TABLES})
+    AND table_name IN (${REQUIRED_TABLES[0]}, ${REQUIRED_TABLES[1]}, ${REQUIRED_TABLES[2]})
   `;
   
-  const existingTables = tablesResult.rows.map((row: { table_name: string }) => row.table_name);
+  const existingTables = tablesResult.rows.map((row: DatabaseRow) => row.table_name as string);
   const missingTables = REQUIRED_TABLES.filter(table => !existingTables.includes(table));
 
-  // Check indexes
+  // Check indexes - use proper SQL syntax for array checking
   const indexesResult = await sql`
     SELECT indexname 
     FROM pg_indexes 
     WHERE schemaname = 'public'
-    AND indexname = ANY(${REQUIRED_INDEXES})
+    AND indexname IN (${REQUIRED_INDEXES[0]}, ${REQUIRED_INDEXES[1]}, ${REQUIRED_INDEXES[2]}, ${REQUIRED_INDEXES[3]}, ${REQUIRED_INDEXES[4]})
   `;
   
-  const existingIndexes = indexesResult.rows.map((row: { indexname: string }) => row.indexname);
+  const existingIndexes = indexesResult.rows.map((row: DatabaseRow) => row.indexname as string);
   const missingIndexes = REQUIRED_INDEXES.filter(index => !existingIndexes.includes(index));
 
-  // Check triggers
+  // Check triggers - use proper SQL syntax for array checking
   const triggersResult = await sql`
     SELECT trigger_name 
     FROM information_schema.triggers 
     WHERE trigger_schema = 'public'
-    AND trigger_name = ANY(${REQUIRED_TRIGGERS})
+    AND trigger_name IN (${REQUIRED_TRIGGERS[0]}, ${REQUIRED_TRIGGERS[1]})
   `;
   
-  const existingTriggers = triggersResult.rows.map((row: { trigger_name: string }) => row.trigger_name);
+  const existingTriggers = triggersResult.rows.map((row: DatabaseRow) => row.trigger_name as string);
   const missingTriggers = REQUIRED_TRIGGERS.filter(trigger => !existingTriggers.includes(trigger));
 
   return {
@@ -462,11 +476,17 @@ async function validateDatabaseData(): Promise<{
 
   const results = await Promise.all(promises);
   
+  // Type-safe property access with proper type narrowing
+  const hasDefaultModels = 'hasDefaultModels' in results[0] ? results[0].hasDefaultModels : false;
+  const modelCount = 'modelCount' in results[1] ? results[1].modelCount : 0;
+  const urlCount = 'urlCount' in results[2] ? results[2].urlCount : 0;
+  const auditLogCount = 'auditLogCount' in results[3] ? results[3].auditLogCount : 0;
+  
   return {
-    hasDefaultModels: results[0].hasDefaultModels,
-    modelCount: results[1].modelCount,
-    urlCount: results[2].urlCount,
-    auditLogCount: results[3].auditLogCount
+    hasDefaultModels,
+    modelCount,
+    urlCount,
+    auditLogCount
   };
 }
 
@@ -484,8 +504,7 @@ export async function initializeSchema(): Promise<void> {
       AND table_name IN ('ai_model_config', 'rag_urls', 'config_audit')
     `;
     
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const existingTables = tablesResult.rows.map((row: any) => row.table_name);
+    const existingTables = tablesResult.rows.map((row: DatabaseRow) => row.table_name as string);
     const requiredTables = ['ai_model_config', 'rag_urls', 'config_audit'];
     const missingTables = requiredTables.filter(table => !existingTables.includes(table));
     
@@ -694,7 +713,8 @@ class TransactionClient {
     const queryString = template.join('?');
     
     try {
-      const result = await sql(template, ...values);
+      // Type assertion for values to handle the unknown type properly
+      const result = await sql(template, ...(values as any[]));
       
       const duration = Date.now() - startTime;
       logQuery(`[Transaction] ${queryString}`, values, duration);
@@ -910,7 +930,8 @@ export async function withBatchTransaction<T extends readonly unknown[]>(
       results.push(result);
     }
     
-    return results as T;
+    // Type-safe conversion with proper validation
+    return results as unknown as T;
   });
 }
 
@@ -1013,4 +1034,3 @@ export async function getConnectionPoolStats(): Promise<{
 
 // Export the sql client and transaction classes for direct use when needed
 export { sql, TransactionClient, SavepointClient };
-export type { VercelPostgresClient };

@@ -37,7 +37,7 @@ export async function GET() {
     const validationStatus = getValidationStatus();
     
     // Get database-driven configuration data
-    let modelConfigs: unknown[], ragUrls: unknown[], databaseStats: unknown;
+    let modelConfigs: unknown[], ragUrls: unknown[], databaseStats: { health: { connected: boolean; responseTime: number; error?: string }; tableStats: Array<{ tableName: string; rowCount: number; sizeBytes: number }>; connectionInfo: { database: string; user: string; applicationName: string } };
     try {
       [modelConfigs, ragUrls, databaseStats] = await Promise.all([
         getModelConfigs(),

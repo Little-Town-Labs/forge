@@ -480,25 +480,27 @@ export async function createModelConfig(
     return await withTransaction(async (client) => {
       // If this is set as default, unset other defaults for this provider
       if (config.isDefault) {
-        await client`
+        await client.executeQuery(`
           UPDATE ai_model_config 
           SET is_default = FALSE 
-          WHERE provider = ${config.provider}
-        `;
+          WHERE provider = $1
+        `, [config.provider]);
       }
 
-      const insertResult = await client`
+      const insertResult = await client.executeQuery(`
         INSERT INTO ai_model_config (
           provider, model_name, is_default, is_enabled,
           temperature, max_tokens, top_p, system_prompt, api_key_encrypted
         ) VALUES (
-          ${config.provider}, ${config.modelName}, ${config.isDefault},
-          ${config.isEnabled}, ${config.temperature}, ${config.maxTokens},
-          ${config.topP}, ${config.systemPrompt || null},
-          ${config.apiKey ? encryptApiKey(config.apiKey) : null}
+          $1, $2, $3, $4, $5, $6, $7, $8, $9
         )
         RETURNING id, created_at, updated_at
-      `;
+      `, [
+        config.provider, config.modelName, config.isDefault,
+        config.isEnabled, config.temperature, config.maxTokens,
+        config.topP, config.systemPrompt || null,
+        config.apiKey ? encryptApiKey(config.apiKey) : null
+      ]);
 
       return insertResult;
     });
@@ -506,9 +508,9 @@ export async function createModelConfig(
 
   const newConfig: AiModelConfig = {
     ...config,
-    id: result.rows[0].id,
-    createdAt: result.rows[0].created_at,
-    updatedAt: result.rows[0].updated_at
+    id: (result.rows[0] as any).id,
+    createdAt: (result.rows[0] as any).created_at,
+    updatedAt: (result.rows[0] as any).updated_at
   };
 
   // Clear cache and write audit log
@@ -546,28 +548,36 @@ export async function updateModelConfig(
     return await withTransaction(async (client) => {
       // If this is set as default, unset other defaults for this provider
       if (updates.isDefault && updates.provider) {
-        await client`
+        await client.executeQuery(`
           UPDATE ai_model_config 
           SET is_default = FALSE 
-          WHERE provider = ${updates.provider} AND id != ${id}
-        `;
+          WHERE provider = $1 AND id != $2
+        `, [updates.provider, id]);
       }
 
       // Build UPDATE query using the safe query builder
       const updateQuery = createUpdateQuery<AiModelConfig>('ai_model_config')
-        .set('model_name', updates.modelName)
-        .set('is_default', updates.isDefault)
-        .set('is_enabled', updates.isEnabled)
+        .set('modelName', updates.modelName)
+        .set('isDefault', updates.isDefault)
+        .set('isEnabled', updates.isEnabled)
         .set('temperature', updates.temperature)
-        .set('max_tokens', updates.maxTokens)
-        .set('top_p', updates.topP)
-        .set('system_prompt', updates.systemPrompt)
-        .set('api_key_encrypted', updates.apiKey, (apiKey) => 
+        .set('maxTokens', updates.maxTokens)
+        .set('topP', updates.topP)
+        .set('systemPrompt', updates.systemPrompt)
+        .set('apiKey', updates.apiKey, (apiKey) => 
           apiKey ? encryptApiKey(apiKey as string) : null
         )
         .where('id = $1', [id]);
 
-      return await updateQuery.execute(client, { 
+      // Create a wrapper that matches the expected interface
+      const queryWrapper = {
+        query: async (query: string, values: unknown[]): Promise<{ rows: unknown[] }> => {
+          const result = await client.executeQuery(query, values);
+          return { rows: result.rows };
+        }
+      };
+
+      return await updateQuery.execute(queryWrapper, { 
         timeout: 15000, 
         auditContext: `Admin: ${adminEmail}` 
       });
@@ -575,18 +585,18 @@ export async function updateModelConfig(
   });
 
   const updatedConfig: AiModelConfig = {
-    id: result.rows[0].id,
-    provider: result.rows[0].provider as ModelProvider,
-    modelName: result.rows[0].model_name,
-    isDefault: result.rows[0].is_default,
-    isEnabled: result.rows[0].is_enabled,
-    temperature: parseFloat(result.rows[0].temperature),
-    maxTokens: result.rows[0].max_tokens,
-    topP: parseFloat(result.rows[0].top_p),
-    systemPrompt: result.rows[0].system_prompt,
-    apiKey: result.rows[0].api_key_encrypted ? decryptApiKey(result.rows[0].api_key_encrypted) : undefined,
-    createdAt: result.rows[0].created_at,
-    updatedAt: result.rows[0].updated_at
+    id: currentResult.rows[0].id,
+    provider: currentResult.rows[0].provider as ModelProvider,
+    modelName: updates.modelName ?? currentResult.rows[0].model_name,
+    isDefault: updates.isDefault ?? currentResult.rows[0].is_default,
+    isEnabled: updates.isEnabled ?? currentResult.rows[0].is_enabled,
+    temperature: updates.temperature ?? parseFloat(currentResult.rows[0].temperature),
+    maxTokens: updates.maxTokens ?? currentResult.rows[0].max_tokens,
+    topP: updates.topP ?? parseFloat(currentResult.rows[0].top_p),
+    systemPrompt: updates.systemPrompt ?? currentResult.rows[0].system_prompt,
+    apiKey: updates.apiKey ? maskApiKey(updates.apiKey) : (currentResult.rows[0].api_key_encrypted ? decryptApiKey(currentResult.rows[0].api_key_encrypted) : undefined),
+    createdAt: currentResult.rows[0].created_at,
+    updatedAt: new Date()
   };
 
   // Clear cache and write audit log
@@ -797,14 +807,14 @@ export async function updateRagUrl(
     const updateQuery = createUpdateQuery<RagUrlConfig>('rag_urls')
       .set('url', updates.url)
       .set('namespace', updates.namespace)
-      .set('crawl_config', updates.crawlConfig, (config) => 
+      .set('crawlConfig', updates.crawlConfig, (config) => 
         config ? JSON.stringify(config) : undefined
       )
-      .set('is_active', updates.isActive)
-      .set('last_crawled', updates.lastCrawled)
-      .set('crawl_status', updates.crawlStatus)
-      .set('pages_indexed', updates.pagesIndexed)
-      .set('error_message', updates.errorMessage)
+      .set('isActive', updates.isActive)
+      .set('lastCrawled', updates.lastCrawled)
+      .set('crawlStatus', updates.crawlStatus)
+      .set('pagesIndexed', updates.pagesIndexed)
+      .set('errorMessage', updates.errorMessage)
       .where('id = $1', [id]);
 
     return await updateQuery.execute(sql);

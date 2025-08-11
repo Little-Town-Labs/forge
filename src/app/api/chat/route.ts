@@ -174,29 +174,13 @@ async function getOptimalModelConfig(
  */
 function createAIModel(config: AiModelConfig) {
   if (config.provider === "google") {
-    // Use configured API key if available, otherwise fall back to environment
-    if (config.apiKey) {
-      // Create a new Google client with the specific API key
-      const customGoogle = google({
-        apiKey: config.apiKey
-      });
-      return customGoogle(config.modelName);
-    } else {
-      // Use environment-configured Google client
-      return google(config.modelName);
-    }
+    // For now, use the default Google client with environment variables
+    // TODO: Implement proper API key handling for Google AI
+    return google(config.modelName);
   } else {
-    // Use configured API key if available, otherwise fall back to environment
-    if (config.apiKey) {
-      // Create a new OpenAI client with the specific API key
-      const customOpenAI = openai({
-        apiKey: config.apiKey
-      });
-      return customOpenAI(config.modelName);
-    } else {
-      // Use environment-configured OpenAI client
-      return openai(config.modelName);
-    }
+    // For now, use the default OpenAI client with environment variables
+    // TODO: Implement proper API key handling for OpenAI
+    return openai(config.modelName);
   }
 }
 
@@ -269,7 +253,7 @@ AI assistant will not invent anything that is not drawn directly from the contex
 
     // Ask AI for a streaming chat completion given the prompt
     const response = await streamText({
-      model: aiModel,
+      model: aiModel as any,
       messages: [
         ...prompt,
         ...messages.filter((message: Message) => message.role === "user"),

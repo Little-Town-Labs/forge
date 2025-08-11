@@ -89,7 +89,7 @@ export async function GET() {
           availableMigrations: 0,
           pendingMigrations: 0,
           appliedMigrations: [],
-          integrityCheck: { isValid: false, errors: [`Migration status error: ${error.message}`] },
+          integrityCheck: { isValid: false, errors: [`Migration status error: ${error instanceof Error ? error.message : 'Unknown error'}`] },
           error: error instanceof Error ? error.message : 'Migration status unavailable'
         })) : 
         Promise.resolve({

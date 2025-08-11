@@ -322,7 +322,7 @@ export function validateEnvironmentVariables(): {
     const value = process.env[envVar.name];
     const present = !!value;
     
-    const result = {
+    const result: EnvValidationResult = {
       present,
       required: envVar.required,
       category: envVar.category,

@@ -446,7 +446,7 @@ const AuditLogsViewer: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         <div className="flex items-center space-x-2">
-                          {entry.ipAddress && (
+                          {entry.ipAddress && typeof entry.ipAddress === 'string' && (
                             <span className="text-xs bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">
                               {entry.ipAddress}
                             </span>
@@ -457,7 +457,7 @@ const AuditLogsViewer: React.FC = () => {
                     </tr>
                     
                     {/* Expanded Details */}
-                    {expandedEntry === entry.id && (
+                    {expandedEntry === entry.id ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-4 bg-gray-50 dark:bg-gray-700">
                           <div className="space-y-4">
@@ -466,42 +466,42 @@ const AuditLogsViewer: React.FC = () => {
                               <div>
                                 <span className="font-medium text-gray-700 dark:text-gray-300">User Agent:</span>
                                 <p className="text-gray-600 dark:text-gray-400 mt-1 break-all">
-                                  {entry.userAgent || 'N/A'}
+                                  {typeof entry.userAgent === 'string' ? entry.userAgent : 'N/A'}
                                 </p>
                               </div>
                               <div>
                                 <span className="font-medium text-gray-700 dark:text-gray-300">IP Address:</span>
                                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                                  {entry.ipAddress || 'N/A'}
+                                  {typeof entry.ipAddress === 'string' ? entry.ipAddress : 'N/A'}
                                 </p>
                               </div>
                             </div>
                             
                             {/* Value Changes */}
-                            {(entry.oldValue || entry.newValue) && (
+                            {(entry.oldValue || entry.newValue) ? (
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {entry.oldValue && (
+                                {entry.oldValue ? (
                                   <div>
                                     <span className="font-medium text-gray-700 dark:text-gray-300">Old Value:</span>
                                     <pre className="text-xs text-gray-600 dark:text-gray-400 mt-1 bg-white dark:bg-gray-800 p-2 rounded border overflow-auto max-h-32">
                                       {formatValue(entry.oldValue)}
                                     </pre>
                                   </div>
-                                )}
-                                {entry.newValue && (
+                                ) : null}
+                                {entry.newValue ? (
                                   <div>
                                     <span className="font-medium text-gray-700 dark:text-gray-300">New Value:</span>
                                     <pre className="text-xs text-gray-600 dark:text-gray-400 mt-1 bg-white dark:bg-gray-800 p-2 rounded border overflow-auto max-h-32">
                                       {formatValue(entry.newValue)}
                                     </pre>
                                   </div>
-                                )}
+                                ) : null}
                               </div>
-                            )}
+                            ) : null}
                           </div>
                         </td>
                       </tr>
-                    )}
+                    ) : null}
                   </React.Fragment>
                 ))}
               </tbody>
