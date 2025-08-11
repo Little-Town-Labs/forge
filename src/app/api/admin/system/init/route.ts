@@ -6,6 +6,8 @@
  */
 
 import { NextRequest } from "next/server";
+
+export const runtime = 'nodejs';
 import { currentUser } from "@clerk/nextjs/server";
 import { isAdmin } from "@/utils/admin";
 import { 

@@ -1,6 +1,8 @@
 import { getValidationStatus } from "@/utils/startup";
 import { createApiResponse, HttpStatus } from "@/utils/apiResponse";
 
+export const runtime = 'nodejs';
+
 /**
  * GET /api/health - Health check endpoint with configuration validation
  * 

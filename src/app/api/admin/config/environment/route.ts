@@ -1,4 +1,6 @@
 import { NextRequest } from "next/server";
+
+export const runtime = 'nodejs';
 import { currentUser } from "@clerk/nextjs/server";
 import { isAdmin } from "@/utils/admin";
 import { 
@@ -295,6 +297,8 @@ interface ValidationResults {
   results: Record<string, {
     required: boolean;
     present: boolean;
+    category: string;
+    description: string;
     validation?: {
       isValid: boolean;
       errors: string[];

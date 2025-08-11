@@ -1,4 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
+
+export const runtime = 'nodejs';
 import { isAdmin } from "@/utils/admin";
 import { getValidationStatus } from "@/utils/startup";
 import { getRateLimitInfo } from "@/utils/rateLimiter";
