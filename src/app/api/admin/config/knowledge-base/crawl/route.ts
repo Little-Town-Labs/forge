@@ -11,7 +11,7 @@ import {
 } from "@/utils/apiResponse";
 import { getRagUrls, updateRagUrl } from "@/lib/config-service";
 import { Crawler } from "@/utils/crawler";
-import { EmbeddingProvider } from "@/utils/embeddings";
+import { EmbeddingProvider, embedDocument } from "@/utils/embeddings";
 import { prepareDocument, chunkedUpsert, DocumentSplitter } from "@/utils/documents";
 import { Pinecone } from '@pinecone-database/pinecone';
 import { SeedOptions } from "@/types";
@@ -144,12 +144,15 @@ export async function POST(request: NextRequest) {
           // Prepare document chunks
           const preparedDoc = await prepareDocument(page, splitter);
           
-          // Generate embeddings and store in Pinecone
+          // Generate embeddings for the document chunks
+          const vectors = await Promise.all(preparedDoc.map(doc => embedDocument(doc, embeddingProvider)));
+          
+          // Store in Pinecone
           await chunkedUpsert(
             index,
-            preparedDoc,
+            vectors,
             crawlResult.namespace || 'default',
-            embeddingProvider
+            10
           );
           
           documents.push(preparedDoc);
