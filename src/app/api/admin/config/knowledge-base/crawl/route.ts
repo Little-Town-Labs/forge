@@ -12,9 +12,10 @@ import {
 import { getRagUrls, updateRagUrl } from "@/lib/config-service";
 import { Crawler } from "@/utils/crawler";
 import { EmbeddingProvider } from "@/utils/embeddings";
-import { prepareDocument, chunkedUpsert } from "@/utils/documents";
+import { prepareDocument, chunkedUpsert, DocumentSplitter } from "@/utils/documents";
 import { Pinecone } from '@pinecone-database/pinecone';
 import { SeedOptions } from "@/types";
+import { RecursiveCharacterTextSplitter, MarkdownTextSplitter } from 'langchain/text_splitter';
 
 /**
  * POST /api/admin/config/knowledge-base/crawl - Trigger crawl for a specific URL
@@ -111,6 +112,11 @@ export async function POST(request: NextRequest) {
       chunkOverlap: 200
     };
 
+    // Create document splitter from seed options
+    const { splittingMethod, chunkSize, chunkOverlap } = seedOptions;
+    const splitter: DocumentSplitter = splittingMethod === 'recursive' ?
+      new RecursiveCharacterTextSplitter({ chunkSize, chunkOverlap }) : new MarkdownTextSplitter({});
+
     // Use OpenAI as default embedding provider (can be made configurable later)
     const embeddingProvider: EmbeddingProvider = 'openai';
 
@@ -136,14 +142,7 @@ export async function POST(request: NextRequest) {
 
         for (const page of crawlResult.pages) {
           // Prepare document chunks
-          const preparedDoc = await prepareDocument({
-            pageContent: page.content,
-            metadata: { 
-              url: page.url, 
-              namespace: crawlResult.namespace || 'default',
-              urlConfigId: crawlResult.urlConfigId 
-            }
-          }, seedOptions);
+          const preparedDoc = await prepareDocument(page, splitter);
           
           // Generate embeddings and store in Pinecone
           await chunkedUpsert(
