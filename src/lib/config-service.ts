@@ -11,13 +11,21 @@ import {
   InputSanitizer, 
   SecureQuery
 } from './query-security';
-import type { 
+import { 
   AiModelConfig, 
-  RagUrlConfig, 
-  ConfigAuditEntry, 
   ModelProvider, 
+  RagUrlConfig, 
+  ConfigAuditEntry,
   CrawlStatus 
 } from '../types';
+
+// Database result types for better type safety
+interface DatabaseResultRow {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  [key: string]: unknown;
+}
 
 // Type definitions for UPDATE query builder
 type UpdateField<T> = {
@@ -508,9 +516,9 @@ export async function createModelConfig(
 
   const newConfig: AiModelConfig = {
     ...config,
-    id: (result.rows[0] as any).id,
-    createdAt: (result.rows[0] as any).created_at,
-    updatedAt: (result.rows[0] as any).updated_at
+    id: (result.rows[0] as DatabaseResultRow).id,
+    createdAt: new Date((result.rows[0] as DatabaseResultRow).created_at),
+    updatedAt: new Date((result.rows[0] as DatabaseResultRow).updated_at)
   };
 
   // Clear cache and write audit log
@@ -544,7 +552,7 @@ export async function updateModelConfig(
     throw new Error('Model configuration not found');
   }
 
-  const result = await withRetry(async () => {
+  await withRetry(async () => {
     return await withTransaction(async (client) => {
       // If this is set as default, unset other defaults for this provider
       if (updates.isDefault && updates.provider) {

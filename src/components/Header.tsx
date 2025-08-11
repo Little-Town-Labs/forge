@@ -8,9 +8,17 @@ import { Settings } from "lucide-react";
 
 interface HeaderProps {
   className?: string;
+  onAdminToggle?: () => void;
+  isAdminPanelOpen?: boolean;
+  currentPage?: 'chat' | 'admin' | 'other';
 }
 
-const Header: React.FC<HeaderProps> = ({ className = "" }) => {
+const Header: React.FC<HeaderProps> = ({ 
+  className = "", 
+  onAdminToggle, 
+  isAdminPanelOpen = false, 
+  currentPage = 'other' 
+}) => {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const [userIsAdmin, setUserIsAdmin] = useState(false);
@@ -27,7 +35,11 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
   }, [isLoaded, user]);
 
   const handleAdminClick = () => {
-    router.push("/admin");
+    if (currentPage === 'chat' && onAdminToggle) {
+      onAdminToggle();
+    } else {
+      router.push("/admin");
+    }
   };
 
   return (
@@ -50,12 +62,18 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
             {!isCheckingAdmin && userIsAdmin && (
               <button
                 onClick={handleAdminClick}
-                className="flex items-center px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                title="Admin Dashboard"
+                className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
+                  isAdminPanelOpen && currentPage === 'chat'
+                    ? 'bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+                title={currentPage === 'chat' ? 'Toggle Admin Panel' : 'Admin Dashboard'}
                 data-testid="admin-button"
               >
                 <Settings className="w-4 h-4 mr-1" />
-                <span className="text-sm font-medium">Admin</span>
+                <span className="text-sm font-medium">
+                  {currentPage === 'chat' && isAdminPanelOpen ? 'Close Admin' : 'Admin'}
+                </span>
               </button>
             )}
             

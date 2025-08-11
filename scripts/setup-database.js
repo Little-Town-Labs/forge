@@ -23,6 +23,9 @@
 const fs = require('fs').promises;
 const path = require('path');
 
+// Load environment variables from .env.local
+require('dotenv').config({ path: '.env.local' });
+
 // Try to require pg, handle case where it's not installed
 let Client;
 try {
@@ -177,6 +180,79 @@ export POSTGRES_URL="postgresql://username:password@hostname:port/database"
   }
 
   /**
+   * Parse SQL statements properly, handling PostgreSQL functions and triggers
+   */
+  parseSQLStatements(sql) {
+    const statements = [];
+    let currentStatement = '';
+    let inFunction = false;
+    let inTrigger = false;
+    let dollarQuoteLevel = 0;
+    
+    const lines = sql.split('\n');
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      // Skip comments and empty lines
+      if (trimmedLine.startsWith('--') || trimmedLine === '') {
+        continue;
+      }
+      
+      // Check for function/trigger boundaries
+      if (trimmedLine.includes('CREATE OR REPLACE FUNCTION') || trimmedLine.includes('CREATE FUNCTION')) {
+        inFunction = true;
+        dollarQuoteLevel = 0;
+      }
+      
+      if (trimmedLine.includes('CREATE TRIGGER')) {
+        inTrigger = true;
+        dollarQuoteLevel = 0;
+      }
+      
+      // Handle dollar quoting in functions and triggers
+      if (inFunction || inTrigger) {
+        if (trimmedLine.includes('$$')) {
+          dollarQuoteLevel++;
+        }
+        
+        currentStatement += line + '\n';
+        
+        // End function/trigger when we have balanced $$ quotes
+        if (dollarQuoteLevel === 2) {
+          inFunction = false;
+          inTrigger = false;
+          dollarQuoteLevel = 0;
+          
+          // Remove the last semicolon if present
+          currentStatement = currentStatement.replace(/;\s*$/, '');
+          statements.push(currentStatement.trim());
+          currentStatement = '';
+        }
+      } else {
+        // Regular statements
+        if (trimmedLine.includes(';')) {
+          currentStatement += line;
+          statements.push(currentStatement.trim());
+          currentStatement = '';
+        } else {
+          currentStatement += line + '\n';
+        }
+      }
+    }
+    
+    // Add any remaining statement
+    if (currentStatement.trim()) {
+      statements.push(currentStatement.trim());
+    }
+    
+    // Filter out empty statements and comments
+    return statements
+      .map(stmt => stmt.trim())
+      .filter(stmt => stmt.length > 0 && !stmt.match(/^--/));
+  }
+
+  /**
    * Read SQL file with error handling
    */
   async readSQLFile(filename) {
@@ -205,52 +281,162 @@ export POSTGRES_URL="postgresql://username:password@hostname:port/database"
     try {
       this.logInfo(`${description}...`);
       
-      // Begin transaction
-      await this.client.query('BEGIN');
+      // Split SQL into individual statements, handling PostgreSQL functions and triggers
+      const statements = this.parseSQLStatements(sql);
+
+      // Separate statements by type for proper execution order
+      const tableStatements = statements.filter(stmt => 
+        stmt.toUpperCase().includes('CREATE TABLE') || 
+        stmt.toUpperCase().includes('CREATE OR REPLACE FUNCTION')
+      );
       
-      // Split SQL into individual statements and execute
-      const statements = sql
-        .split(';')
-        .map(stmt => stmt.trim())
-        .filter(stmt => stmt.length > 0 && !stmt.match(/^--/));
+      const indexStatements = statements.filter(stmt => 
+        stmt.toUpperCase().includes('CREATE INDEX') || 
+        stmt.toUpperCase().includes('CREATE UNIQUE INDEX')
+      );
+      
+      const triggerStatements = statements.filter(stmt => 
+        stmt.toUpperCase().includes('CREATE TRIGGER')
+      );
+      
+      const otherStatements = statements.filter(stmt => 
+        !stmt.toUpperCase().includes('CREATE TABLE') && 
+        !stmt.toUpperCase().includes('CREATE INDEX') && 
+        !stmt.toUpperCase().includes('CREATE UNIQUE INDEX') && 
+        !stmt.toUpperCase().includes('CREATE TRIGGER') &&
+        !stmt.toUpperCase().includes('CREATE OR REPLACE FUNCTION')
+      );
+
+      // Debug logging
+      this.logInfo(`Total statements: ${statements.length}`);
+      this.logInfo(`Table statements: ${tableStatements.length}`);
+      this.logInfo(`Index statements: ${indexStatements.length}`);
+      this.logInfo(`Trigger statements: ${triggerStatements.length}`);
+      this.logInfo(`Other statements: ${otherStatements.length}`);
+      
+      // Log first few statements of each type for debugging
+      if (tableStatements.length > 0) {
+        this.logInfo(`First table statement: ${tableStatements[0].substring(0, 100)}...`);
+      }
+      if (indexStatements.length > 0) {
+        this.logInfo(`First index statement: ${indexStatements[0].substring(0, 100)}...`);
+      }
+      
+      // Debug: Show first few statements to see what's happening
+      this.logInfo('First 3 statements:');
+      statements.slice(0, 3).forEach((stmt, i) => {
+        this.logInfo(`  ${i + 1}: ${stmt.substring(0, 80)}...`);
+      });
+      
+      // Debug: Show what's being filtered as "other"
+      this.logInfo('First 3 "other" statements:');
+      otherStatements.slice(0, 3).forEach((stmt, i) => {
+        this.logInfo(`  ${i + 1}: ${stmt.substring(0, 80)}...`);
+      });
 
       let executed = 0;
-      for (const statement of statements) {
-        if (statement.trim()) {
-          try {
-            const result = await this.client.query(statement);
-            executed++;
-            
-            // Log specific operations
-            if (statement.toUpperCase().includes('CREATE TABLE')) {
-              this.stats.tablesCreated++;
-              const tableName = statement.match(/CREATE TABLE\s+(?:IF NOT EXISTS\s+)?(\w+)/i)?.[1];
-              this.logInfo(`  📁 Created table: ${tableName}`);
-            } else if (statement.toUpperCase().includes('CREATE INDEX')) {
-              this.stats.indexesCreated++;
-              const indexName = statement.match(/CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF NOT EXISTS\s+)?(\w+)/i)?.[1];
-              this.logInfo(`  🔍 Created index: ${indexName}`);
-            } else if (statement.toUpperCase().includes('CREATE TRIGGER')) {
-              this.stats.triggersCreated++;
-              const triggerName = statement.match(/CREATE TRIGGER\s+(\w+)/i)?.[1];
-              this.logInfo(`  ⚡ Created trigger: ${triggerName}`);
-            } else if (statement.toUpperCase().includes('INSERT INTO')) {
-              if (result.rowCount) {
-                this.stats.rowsInserted += result.rowCount;
-                const tableName = statement.match(/INSERT INTO\s+(\w+)/i)?.[1];
-                this.logInfo(`  ➕ Inserted ${result.rowCount} rows into ${tableName}`);
+
+      // Phase 1: Create tables and functions
+      if (tableStatements.length > 0) {
+        this.logInfo('Creating tables and functions...');
+        await this.client.query('BEGIN');
+        for (const statement of tableStatements) {
+          if (statement.trim()) {
+            try {
+              const result = await this.client.query(statement);
+              executed++;
+              
+              if (statement.toUpperCase().includes('CREATE TABLE')) {
+                this.stats.tablesCreated++;
+                const tableName = statement.match(/CREATE TABLE\s+(?:IF NOT EXISTS\s+)?(\w+)/i)?.[1];
+                this.logInfo(`  📁 Created table: ${tableName}`);
+              } else if (statement.toUpperCase().includes('CREATE OR REPLACE FUNCTION')) {
+                const funcName = statement.match(/CREATE OR REPLACE FUNCTION\s+(\w+)/i)?.[1];
+                this.logInfo(`  🔧 Created function: ${funcName}`);
               }
+            } catch (statementError) {
+              this.logError(`Failed to execute statement: ${statement.substring(0, 100)}...`, statementError);
+              throw statementError;
             }
-          } catch (statementError) {
-            // Log the specific statement that failed
-            this.logError(`Failed to execute statement: ${statement.substring(0, 100)}...`, statementError);
-            throw statementError;
           }
         }
+        await this.client.query('COMMIT');
+        this.logSuccess('Tables and functions created successfully');
       }
 
-      // Commit transaction
-      await this.client.query('COMMIT');
+      // Phase 2: Create indexes
+      if (indexStatements.length > 0) {
+        this.logInfo('Creating indexes...');
+        await this.client.query('BEGIN');
+        for (const statement of indexStatements) {
+          if (statement.trim()) {
+            try {
+              const result = await this.client.query(statement);
+              executed++;
+              this.stats.indexesCreated++;
+              
+              const indexName = statement.match(/CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF NOT EXISTS\s+)?(\w+)/i)?.[1];
+              this.logInfo(`  🔍 Created index: ${indexName}`);
+            } catch (statementError) {
+              this.logError(`Failed to execute statement: ${statement.substring(0, 100)}...`, statementError);
+              throw statementError;
+            }
+          }
+        }
+        await this.client.query('COMMIT');
+        this.logSuccess('Indexes created successfully');
+      }
+
+      // Phase 3: Create triggers
+      if (triggerStatements.length > 0) {
+        this.logInfo('Creating triggers...');
+        await this.client.query('BEGIN');
+        for (const statement of triggerStatements) {
+          if (statement.trim()) {
+            try {
+              const result = await this.client.query(statement);
+              executed++;
+              this.stats.triggersCreated++;
+              
+              const triggerName = statement.match(/CREATE TRIGGER\s+(\w+)/i)?.[1];
+              this.logInfo(`  ⚡ Created trigger: ${triggerName}`);
+            } catch (statementError) {
+              this.logError(`Failed to execute statement: ${statement.substring(0, 100)}...`, statementError);
+              throw statementError;
+            }
+          }
+        }
+        await this.client.query('COMMIT');
+        this.logSuccess('Triggers created successfully');
+      }
+
+      // Phase 4: Execute other statements (INSERT, etc.)
+      if (otherStatements.length > 0) {
+        this.logInfo('Executing other statements...');
+        await this.client.query('BEGIN');
+        for (const statement of otherStatements) {
+          if (statement.trim()) {
+            try {
+              const result = await this.client.query(statement);
+              executed++;
+              
+              if (statement.toUpperCase().includes('INSERT INTO')) {
+                if (result.rowCount) {
+                  this.stats.rowsInserted += result.rowCount;
+                  const tableName = statement.match(/INSERT INTO\s+(\w+)/i)?.[1];
+                  this.logInfo(`  ➕ Inserted ${result.rowCount} rows into ${tableName}`);
+                }
+              }
+            } catch (statementError) {
+              this.logError(`Failed to execute statement: ${statement.substring(0, 100)}...`, statementError);
+              throw statementError;
+            }
+          }
+        }
+        await this.client.query('COMMIT');
+        this.logSuccess('Other statements executed successfully');
+      }
+
       this.logSuccess(`${description} completed - executed ${executed} statements`);
 
     } catch (error) {

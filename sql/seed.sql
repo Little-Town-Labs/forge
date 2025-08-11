@@ -77,37 +77,7 @@ ON CONFLICT (provider, model_name) DO NOTHING;
 
 -- Example RAG URL configurations (commented out by default)
 -- Uncomment and modify these examples for initial knowledge base setup
-/*
-INSERT INTO rag_urls (
-  url, 
-  namespace, 
-  crawl_config, 
-  is_active,
-  crawl_status
-) VALUES 
-  (
-    'https://docs.example.com', 
-    'documentation', 
-    '{"mode": "limited", "maxPages": 20}',
-    TRUE,
-    'pending'
-  ),
-  (
-    'https://blog.example.com', 
-    'blog', 
-    '{"mode": "deep", "maxDepth": 2}',
-    TRUE,
-    'pending'
-  ),
-  (
-    'https://help.example.com/getting-started', 
-    'help', 
-    '{"mode": "single"}',
-    TRUE,
-    'pending'
-  )
-ON CONFLICT (url) DO NOTHING;
-*/
+-- Note: RAG URLs can be added through the admin interface after setup
 
 -- System initialization audit log entry
 INSERT INTO config_audit (

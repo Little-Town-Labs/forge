@@ -31,6 +31,7 @@ A Next.js chatbot application with database-driven configuration, multi-provider
 - **Clerk Authentication**: Secure user management with admin controls
 - **Database Security**: Transaction-based operations with rollback capabilities
 - **Admin Dashboard**: Real-time configuration monitoring and management
+- **Integrated Admin Panel**: Access admin functions directly from the chat interface
 - **Distributed Rate Limiting**: Redis-backed rate limiting with memory fallback
 - **Input Validation**: Comprehensive security bounds and sanitization
 
@@ -40,6 +41,67 @@ A Next.js chatbot application with database-driven configuration, multi-provider
 - **Progressive UI**: Loading states, accessibility features, and intuitive controls
 - **Demo Mode**: Works immediately without configuration for testing
 - **Health Monitoring**: Built-in health checks with degradation mode indicators
+- **Integrated Admin Access**: Seamless admin panel integration within the chat interface
+
+## Integrated Admin Panel
+
+The Forge application now features an **integrated admin panel** that provides seamless access to administrative functions directly from the chat interface. This eliminates the need to navigate between different pages while maintaining your chat context.
+
+### Features
+
+- **Slide-out Panel Design**: Collapsible admin panel that overlays the chat interface
+- **Real-time Model Configuration**: Update AI model settings and immediately see changes in chat
+- **Knowledge Base Management**: Manage RAG URLs and crawling without leaving the chat
+- **System Health Monitoring**: Real-time system status and performance metrics
+- **Audit Log Access**: View configuration change history and admin actions
+- **Responsive Design**: Full-screen modal on mobile, side panel on desktop
+
+### Access Methods
+
+1. **Header Button**: Click the Admin button in the chat page header
+2. **Keyboard Shortcuts**: 
+   - `Ctrl+Shift+A` to toggle the admin panel
+   - `Esc` to close the panel
+3. **Floating Toggle**: Admin button changes appearance when panel is open
+
+### Integration Benefits
+
+- **Context Preservation**: Maintain chat history and context while configuring
+- **Immediate Feedback**: See model changes reflected instantly in chat
+- **Workflow Efficiency**: No need to switch between admin and chat pages
+- **Real-time Updates**: Knowledge base changes immediately affect chat context
+- **Unified Experience**: Single interface for both chat and administration
+
+### Security
+
+The integrated admin panel maintains the same security standards as the standalone admin dashboard:
+- Admin-only access through Clerk authentication
+- Email-based admin verification
+- Comprehensive audit logging of all changes
+- Secure API key management with encryption
+
+## Admin Setup
+
+### Standalone Admin Dashboard
+Access the full admin interface at `/admin` for comprehensive system configuration:
+- AI Model management with API key encryption
+- Knowledge base URL configuration and crawling
+- System health monitoring and performance metrics
+- Comprehensive audit logging and change history
+
+### Integrated Admin Panel
+Access admin functions directly from the chat interface:
+- Click the Admin button in the chat page header
+- Use keyboard shortcuts: `Ctrl+Shift+A` to toggle, `Esc` to close
+- Real-time model configuration that immediately affects chat
+- Knowledge base management with instant context updates
+
+### Admin Configuration
+1. Set `ADMIN_EMAILS` in your environment variables
+2. Sign in with a Clerk account using one of the admin emails
+3. Access admin functions through either interface
+4. Configure AI models and knowledge base URLs
+5. Monitor system health and audit logs
 
 ## Getting Started
 
@@ -50,6 +112,7 @@ A Next.js chatbot application with database-driven configuration, multi-provider
 - **AI Provider**: OpenAI API key (required for AI models and embeddings)
 - **Authentication**: Clerk account and API keys (required for user management)
 - **Admin Access**: Admin email address (required for configuration access)
+- **Admin Interface**: Both standalone admin dashboard (`/admin`) and integrated admin panel available
 - Google AI API key (optional - for Gemini models and embeddings)
 - Pinecone API key and index (optional - enables knowledge base features)
 - Redis instance (optional - for distributed rate limiting)
@@ -249,7 +312,16 @@ The application features automatic initialization for production environments:
 ## Current Implementation Status
 
 ### ✅ Completed
-- **Production Deployment & Initialization System** (Latest)
+- **Component Architecture & Communication Improvements** (Latest)
+  - **Callback-Based Communication**: Replaced global event system with proper callback props for better component communication
+  - **Lazy Loading Fixes**: Corrected admin component lazy loading imports ensuring all components load properly
+  - **Grid Layout Improvements**: Enhanced chat page grid layout for seamless admin panel integration
+  - **Event Listener Integration**: Added automatic model refresh when admin changes are made
+  - **Component Separation**: Clean separation of utility functions and React hooks for better server/client compatibility
+  - **Type Safety Enhancements**: Resolved all TypeScript errors and improved type definitions throughout the codebase
+  - **Import Path Corrections**: Fixed component import paths and export patterns for consistent architecture
+  - **Responsive Design**: Improved grid layout responsiveness across different screen sizes
+- **Production Deployment & Initialization System**
   - **Automatic Database Initialization**: Schema and seed data setup on first startup
   - **Middleware Integration**: Seamless initialization through Next.js middleware
   - **Startup Validation System**: Environment, encryption, and system health checks
@@ -413,3 +485,58 @@ PINECONE_INDEX=your_index_name_here
 
 #### Demo Mode
 If Pinecone is not configured or there are issues, the application will automatically fall back to demo mode, showing sample context data.
+
+## Recent Architectural Improvements
+
+### Component Architecture & Communication (Latest Update)
+
+The Forge application has undergone significant architectural improvements to enhance maintainability, type safety, and component communication:
+
+#### ✅ Callback-Based Communication
+- **Replaced Global Events**: Eliminated `window.dispatchEvent()` calls in favor of proper React callback props
+- **Cleaner Architecture**: Components now communicate through explicit callback interfaces
+- **Better Testing**: Easier to test and mock component interactions
+- **Type Safety**: Full TypeScript support for all component communications
+
+#### ✅ Lazy Loading & Component Management
+- **Fixed Import Patterns**: Corrected lazy loading imports for all admin components
+- **Proper Component Loading**: All admin components now load correctly in the integrated panel
+- **Performance Optimization**: Efficient component loading with Suspense boundaries
+- **Error Boundaries**: Proper error handling for component loading failures
+
+#### ✅ Grid Layout & Responsive Design
+- **Enhanced Grid System**: Updated chat page to use 12-column grid for better flexibility
+- **Admin Panel Integration**: Seamless integration with responsive column spans
+- **Mobile Optimization**: Full-screen modal on mobile, side panel on desktop
+- **Dynamic Layout**: Context panel and chat interface adjust based on admin panel state
+
+#### ✅ Component Separation & Architecture
+- **Utility vs Hook Separation**: Clean separation between server utilities and client hooks
+- **Better Import Organization**: Consistent import patterns across all components
+- **Type Safety**: Resolved all TypeScript errors and improved type definitions
+- **Server/Client Compatibility**: Proper separation for Next.js App Router compatibility
+
+#### ✅ Event-Driven Updates
+- **Automatic Model Refresh**: ModelConfigContext automatically refreshes when admin changes are made
+- **Real-time Updates**: Changes in admin panel immediately reflect in chat interface
+- **Context Synchronization**: Knowledge base changes automatically update chat context
+- **Performance Optimization**: Efficient updates without unnecessary re-renders
+
+### Benefits of Recent Improvements
+
+1. **Maintainability**: Cleaner, more predictable component communication
+2. **Type Safety**: Full TypeScript support with no compilation errors
+3. **Performance**: Optimized lazy loading and efficient state updates
+4. **User Experience**: Seamless admin panel integration with responsive design
+5. **Developer Experience**: Better error handling and debugging capabilities
+6. **Architecture**: Cleaner separation of concerns and better code organization
+
+### Technical Implementation Details
+
+- **Callback Props**: AdminPanel now accepts `onModelConfigChange` and `onCrawlComplete` callbacks
+- **Event Listeners**: ModelConfigContext listens for configuration changes and auto-refreshes
+- **Grid System**: CSS Grid with dynamic column spans based on admin panel state
+- **Lazy Loading**: React.lazy() with proper default export handling
+- **Type Definitions**: Improved interfaces and proper TypeScript typing throughout
+
+These improvements ensure that the Forge application maintains high code quality, excellent user experience, and robust architecture for future development.

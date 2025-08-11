@@ -4,11 +4,11 @@ import React, { useState, useEffect } from "react";
 import { SignedIn, useUser } from "@clerk/nextjs";
 import AdminGuard from "@/components/AdminGuard";
 import Header from "@/components/Header";
-import ConfigTabs from "./components/ConfigTabs";
-import AIModelConfig from "./components/AIModelConfig";
-import KnowledgeBaseConfig from "./components/KnowledgeBaseConfig";
-import SystemStatusDashboard from "./components/SystemStatusDashboard";
-import AuditLogsViewer from "./components/AuditLogsViewer";
+import ConfigTabs from "@/components/admin/ConfigTabs";
+import AIModelConfig from "@/components/admin/AIModelConfig";
+import KnowledgeBaseConfig from "@/components/admin/KnowledgeBaseConfig";
+import SystemStatusDashboard from "@/components/admin/SystemStatusDashboard";
+import AuditLogsViewer from "@/components/admin/AuditLogsViewer";
 import { Settings, Brain, Database, Activity, History } from "lucide-react";
 
 export type ConfigTab = "models" | "knowledge-base" | "system" | "audit";
@@ -155,6 +155,20 @@ const AdminConfigPage: React.FC<ConfigPageProps> = () => {
                     System requires attention - Check System Status tab
                   </div>
                 )}
+
+                {/* Integrated Admin Panel Notice */}
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-800 dark:text-blue-200">New: Integrated Admin Panel</h4>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                        Access admin functions directly from the chat interface! Click the Admin button in the chat page header to toggle the integrated admin panel. 
+                        This provides quick access to model configuration and knowledge base management while maintaining your chat context.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Tab Navigation */}

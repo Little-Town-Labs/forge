@@ -76,11 +76,11 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER update_ai_model_config_updated_at 
+CREATE OR REPLACE TRIGGER update_ai_model_config_updated_at 
   BEFORE UPDATE ON ai_model_config 
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_rag_urls_updated_at 
+CREATE OR REPLACE TRIGGER update_rag_urls_updated_at 
   BEFORE UPDATE ON rag_urls 
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

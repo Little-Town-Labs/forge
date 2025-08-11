@@ -1,4 +1,4 @@
-import { Message, streamText } from "ai";
+import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { google } from "@ai-sdk/google";
 import { getContext } from "@/utils/context";
@@ -6,6 +6,7 @@ import { verifyAuthentication, StreamingErrors } from "@/utils/apiResponse";
 import { EmbeddingProvider } from "@/utils/embeddings";
 import { getDefaultModelConfig, getModelConfigs } from "@/lib/config-service";
 import { ModelProvider, AiModelConfig } from "@/types";
+import { Message } from "ai";
 
 // Request-level cache to avoid multiple database calls per request
 let requestCache: {
@@ -253,7 +254,8 @@ AI assistant will not invent anything that is not drawn directly from the contex
 
     // Ask AI for a streaming chat completion given the prompt
     const response = await streamText({
-      model: aiModel as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      model: aiModel as any, // Type assertion to handle LanguageModelV1/V2 compatibility
       messages: [
         ...prompt,
         ...messages.filter((message: Message) => message.role === "user"),

@@ -12,16 +12,11 @@ interface DatabaseRow {
   [key: string]: unknown;
 }
 
-interface TableRow {
-  table_name: string;
-}
-
-interface IndexRow {
-  indexname: string;
-}
-
-interface TriggerRow {
-  trigger_name: string;
+interface TableStatsRow {
+  schemaname: string;
+  tablename: string;
+  row_operations: string;
+  size_bytes: string;
 }
 
 interface DatabaseHealth {
@@ -98,6 +93,7 @@ export async function query<T = unknown>(
   
   try {
     // Type assertion for values to handle the unknown type properly
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await sql(template, ...(values as any[]));
     
     const duration = Date.now() - startTime;
@@ -195,8 +191,7 @@ export async function getDatabaseStats(): Promise<{
     
     return {
       health,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tableStats: tableStatsResult.rows.map((row: any) => ({
+      tableStats: (tableStatsResult.rows as TableStatsRow[]).map((row) => ({
         tableName: row.tablename,
         rowCount: Number(row.row_operations) || 0,
         sizeBytes: Number(row.size_bytes) || 0
@@ -714,6 +709,7 @@ class TransactionClient {
     
     try {
       // Type assertion for values to handle the unknown type properly
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await sql(template, ...(values as any[]));
       
       const duration = Date.now() - startTime;

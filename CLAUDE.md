@@ -156,6 +156,20 @@ The heart of the application. Key functions:
 - **ClerkProvider.tsx** - Authentication provider with error boundaries
 - **Header.tsx** - Navigation with enhanced user menu visibility
 
+### Admin Panel Components (`src/components/admin-panel/`)
+- **AdminPanel.tsx** - Main admin panel with lazy-loaded component system
+- **AdminPanelHeader.tsx** - Panel header with system health indicators
+- **AdminPanelTabs.tsx** - Tab navigation for different admin functions
+- **Integrated Design**: Seamless integration with chat interface using callback-based communication
+
+### Admin Configuration Components (`src/components/admin/`)
+- **AIModelConfig.tsx** - AI model configuration management with encryption
+- **KnowledgeBaseConfig.tsx** - RAG URL configuration and crawl management
+- **SystemStatusDashboard.tsx** - System health monitoring and performance metrics
+- **AuditLogsViewer.tsx** - Configuration change history and admin actions
+- **ConfigSection.tsx** - Reusable configuration section wrapper
+- **ConfigTabs.tsx** - Tab navigation for configuration management
+
 ### Loading Components (`src/app/*/loading.tsx`)
 All loading components include comprehensive accessibility features:
 - **ARIA Attributes**: `aria-live`, `aria-atomic`, `role="status"`
@@ -179,6 +193,14 @@ All loading components include comprehensive accessibility features:
 - **database.ts** - Database connectivity, schema validation, and health monitoring
 - **config-service.ts** - Database-driven configuration management with encryption and audit logging
 - **encryption.ts** - Field-level encryption for sensitive configuration data
+
+### Hooks (`src/hooks/`)
+- **useAdminPanel.ts** - Admin panel state management with system health monitoring
+- **useAdminStatus.ts** - Client-side admin status checking with Clerk integration
+- **useModelConfig.ts** - Model configuration context with automatic refresh capabilities
+
+### Contexts (`src/contexts/`)
+- **ModelConfigContext.tsx** - React context for AI model configuration with event-driven updates
 
 ## Key Dependencies
 - **Vercel AI SDK** (`ai`) - Streaming chat responses
@@ -302,7 +324,17 @@ When admin users cannot bypass rate limits, the system provides:
 
 ## Recent Updates
 
-### Production Deployment & Initialization System (Latest)
+### Component Architecture & Communication Improvements (Latest)
+- ✅ **Callback-Based Communication**: Replaced global event system with proper callback props
+- ✅ **Lazy Loading Fixes**: Corrected admin component lazy loading imports for proper component loading
+- ✅ **Grid Layout Improvements**: Enhanced chat page grid layout for better admin panel integration
+- ✅ **Event Listener Integration**: Added automatic model refresh when admin changes are made
+- ✅ **Component Separation**: Clean separation of utility functions and React hooks for better server/client compatibility
+- ✅ **Type Safety Enhancements**: Resolved all TypeScript errors and improved type definitions
+- ✅ **Import Path Corrections**: Fixed component import paths and export patterns
+- ✅ **Responsive Design**: Improved grid layout responsiveness across different screen sizes
+
+### Production Deployment & Initialization System
 - ✅ **Automatic Database Initialization**: Production-ready automatic schema and seed data setup on first startup
 - ✅ **Middleware Integration**: Database initialization integrated into Next.js middleware for seamless startup
 - ✅ **Startup Validation System**: Comprehensive environment validation, encryption setup, and system health checks

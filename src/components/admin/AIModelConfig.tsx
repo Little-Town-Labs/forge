@@ -39,7 +39,15 @@ interface TestResult {
   provider: string;
 }
 
-const AIModelConfig: React.FC = () => {
+interface AIModelConfigProps {
+  compact?: boolean;
+  onModelConfigChange?: () => void;
+}
+
+const AIModelConfig: React.FC<AIModelConfigProps> = ({ 
+  compact = false, 
+  onModelConfigChange 
+}) => {
   const [models, setModels] = useState<AiModelConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -122,6 +130,8 @@ const AIModelConfig: React.FC = () => {
       if (response.ok) {
         await fetchModels();
         resetForm();
+        // Notify parent component of model configuration change
+        onModelConfigChange?.();
       } else {
         const error = await response.json();
         console.error("Failed to save model:", error);
@@ -143,6 +153,8 @@ const AIModelConfig: React.FC = () => {
 
       if (response.ok) {
         await fetchModels();
+        // Notify parent component of model configuration change
+        onModelConfigChange?.();
       }
     } catch (error) {
       console.error("Failed to delete model:", error);
@@ -229,16 +241,27 @@ const AIModelConfig: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">AI Model Configuration</h2>
-          <p className="text-gray-600 dark:text-gray-300 mt-1">
-            Configure OpenAI and Google AI models with API keys and parameters
-          </p>
+          <h2 className={`font-bold text-gray-900 dark:text-white ${compact ? 'text-lg' : 'text-2xl'}`}>
+            AI Model Configuration
+          </h2>
+          {!compact && (
+            <p className="text-gray-600 dark:text-gray-300 mt-1">
+              Configure OpenAI and Google AI models with API keys and parameters
+            </p>
+          )}
+          {compact && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Changes will immediately affect chat interface
+            </p>
+          )}
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className={`flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
+            compact ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'
+          }`}
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className={`mr-2 ${compact ? 'w-3 h-3' : 'w-4 h-4'}`} />
           Add Model
         </button>
       </div>

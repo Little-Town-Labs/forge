@@ -6,7 +6,12 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "setup-db": "node scripts/setup-database.js",
+    "db:setup": "node scripts/setup-database.js",
+    "db:validate": "node scripts/validate-db-system.js",
+    "db:migrate": "node scripts/run-migrations.js",
+    "db:status": "node scripts/migration-status.js"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.2",
@@ -19,6 +24,7 @@
     "bcryptjs": "^2.4.3",
     "cheerio": "^1.1.0",
     "critters": "^0.0.23",
+    "dotenv": "^17.2.1",
     "langchain": "^0.3.30",
     "lucide-react": "^0.536.0",
     "next": "15.4.4",
