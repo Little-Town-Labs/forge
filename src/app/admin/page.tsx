@@ -5,6 +5,7 @@ import { SignedIn, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import AdminGuard from "@/components/AdminGuard";
 import Header from "@/components/Header";
+import { StartupTrigger } from "@/components/admin/StartupTrigger";
 import { Users, Mail, Settings, BarChart3 } from "lucide-react";
 
 interface AdminStats {
@@ -308,6 +309,17 @@ const AdminDashboard: React.FC = () => {
                   </span>
                 </div>
               </div>
+            </div>
+
+            {/* System Startup Control */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                System Startup Control
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                Use these controls to trigger full application startup initialization or check current status.
+              </p>
+              <StartupTrigger />
             </div>
           </div>
         </div>

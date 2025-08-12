@@ -8,6 +8,7 @@
 import { ensureDatabaseInitialized } from './database-init';
 import { validateEncryptionKey, testEncryption } from './encryption';
 import { runMigrationsWithBackup } from './migration-runner';
+import { getUptime } from './startup-init';
 
 interface StartupResult {
   success: boolean;
@@ -235,7 +236,7 @@ export function getStartupStatus(): {
 } {
   return {
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+    uptime: getUptime(),
     environment: validateEnvironment(),
     encryption: initializeEncryption()
   };

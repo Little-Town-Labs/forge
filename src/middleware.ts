@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { getEdgeStartupStatus, isEdgeStartupReady } from './lib/startup-edge';
 
 // Define routes that require authentication
 const isProtectedRoute = createRouteMatcher([
@@ -11,57 +12,24 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 // Global initialization tracking
-let initializationStarted = false;
-let initializationComplete = false;
-let initializationError: string | null = null;
+let initializationChecked = false;
+let startupStatus: ReturnType<typeof getEdgeStartupStatus> | null = null;
 
 /**
- * Perform lazy initialization on first request
+ * Perform lightweight Edge-compatible startup validation
  */
-async function ensureInitialization(): Promise<void> {
-  if (initializationComplete) {
-    return; // Already initialized successfully
+function checkStartupStatus(): ReturnType<typeof getEdgeStartupStatus> {
+  if (!startupStatus) {
+    startupStatus = getEdgeStartupStatus();
   }
-  
-  if (initializationStarted) {
-    // Initialization in progress - wait a bit and check again
-    await new Promise(resolve => setTimeout(resolve, 100));
-    return ensureInitialization();
-  }
-  
-  initializationStarted = true;
-  
-  try {
-    // Import startup module dynamically
-    const { ensureApplicationInitialized } = await import('./lib/startup');
-    
-    console.log('[MIDDLEWARE] Starting application initialization...');
-    const result = await ensureApplicationInitialized();
-    
-    if (result.success) {
-      console.log('[MIDDLEWARE] ✅ Application initialization completed');
-      initializationComplete = true;
-      initializationError = null;
-    } else {
-      const error = `Initialization failed: DB=${!result.database.initialized}, Env=${!result.environment.valid}`;
-      console.error('[MIDDLEWARE] ❌ Application initialization failed:', error);
-      initializationError = error;
-      
-      // Don't mark as complete so we can retry
-      initializationStarted = false;
-    }
-  } catch (error) {
-    console.error('[MIDDLEWARE] ❌ Initialization error:', error);
-    initializationError = error instanceof Error ? error.message : 'Unknown error';
-    initializationStarted = false; // Allow retry
-  }
+  return startupStatus;
 }
 
 /**
- * Check if request should trigger initialization
+ * Check if request should trigger startup validation
  */
-function shouldInitialize(pathname: string): boolean {
-  // Skip initialization for static assets and Next.js internal routes
+function shouldCheckStartup(pathname: string): boolean {
+  // Skip validation for static assets and Next.js internal routes
   const skipPatterns = [
     '/_next',
     '/favicon.ico',
@@ -77,37 +45,49 @@ function shouldInitialize(pathname: string): boolean {
 export default clerkMiddleware(async (auth, req) => {
   const { pathname } = req.nextUrl;
   
-  // Ensure application is initialized before processing requests
-  if (shouldInitialize(pathname)) {
+  // Perform lightweight startup validation for relevant requests
+  if (shouldCheckStartup(pathname)) {
     try {
-      await ensureInitialization();
-      
-      // If initialization failed, return a service unavailable response
-      // for critical API endpoints (except system status endpoints)
-      if (!initializationComplete && initializationError) {
-        if (pathname.startsWith('/api/') && 
-            !pathname.includes('/system') && 
-            !pathname.includes('/health')) {
-          
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'Service temporarily unavailable - system initialization in progress',
-              details: initializationError,
-              timestamp: new Date().toISOString()
-            }),
-            {
-              status: 503,
-              headers: {
-                'Content-Type': 'application/json',
-                'Retry-After': '30'
-              }
-            }
-          );
-        }
+      if (!initializationChecked) {
+        console.log('[MIDDLEWARE] Checking startup requirements...');
+        initializationChecked = true;
       }
+      
+      const status = checkStartupStatus();
+      
+      // If startup validation failed, return a service unavailable response
+      // for critical API endpoints (except system status endpoints)
+      if (!status.success && pathname.startsWith('/api/') && 
+          !pathname.includes('/system') && 
+          !pathname.includes('/health')) {
+        
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Service temporarily unavailable - startup validation failed',
+            details: {
+              missingVariables: status.environment.missingVariables,
+              warnings: status.environment.warnings
+            },
+            timestamp: status.basic.timestamp
+          }),
+          {
+            status: 503,
+            headers: {
+              'Content-Type': 'application/json',
+              'Retry-After': '30'
+            }
+          }
+        );
+      }
+      
+      // Log warnings if any
+      if (status.environment.warnings.length > 0) {
+        console.warn('[MIDDLEWARE] Startup warnings:', status.environment.warnings);
+      }
+      
     } catch (error) {
-      console.error('[MIDDLEWARE] Initialization error:', error);
+      console.error('[MIDDLEWARE] Startup validation error:', error);
       
       // For API routes, return error response
       if (pathname.startsWith('/api/') && 
