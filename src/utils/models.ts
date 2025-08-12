@@ -58,6 +58,7 @@ export interface AIModel {
   };
   isUserModel?: boolean;
   userId?: string;
+  isDefault?: boolean;
 }
 
 export async function getPublicModels(): Promise<AIModel[]> {
