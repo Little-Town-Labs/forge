@@ -9,18 +9,24 @@ export const FALLBACK_MODELS = [
     pricing: {
       input: 0.00015,
       output: 0.0006
-    }
+    },
+    isEnabled: true,
+    model: 'gpt-4o-mini',
+    temperature: 0.7
   },
   {
     id: 'gpt-3.5-turbo',
     name: 'GPT-3.5 Turbo',
     provider: 'openai',
-    description: 'Balanced performance and cost',
+    description: 'Fast and cost-effective GPT-3.5 model',
     maxTokens: 16385,
     pricing: {
       input: 0.0005,
       output: 0.0015
-    }
+    },
+    isEnabled: true,
+    model: 'gpt-3.5-turbo',
+    temperature: 0.7
   },
   {
     id: 'claude-3-haiku-20240307',
@@ -31,7 +37,10 @@ export const FALLBACK_MODELS = [
     pricing: {
       input: 0.00025,
       output: 0.00125
-    }
+    },
+    isEnabled: true,
+    model: 'claude-3-haiku-20240307',
+    temperature: 0.7
   },
   {
     id: 'gemini-1.5-flash',
@@ -42,7 +51,10 @@ export const FALLBACK_MODELS = [
     pricing: {
       input: 0.000075,
       output: 0.0003
-    }
+    },
+    isEnabled: true,
+    model: 'gemini-1.5-flash',
+    temperature: 0.7
   }
 ];
 
@@ -59,6 +71,9 @@ export interface AIModel {
   isUserModel?: boolean;
   userId?: string;
   isDefault?: boolean;
+  isEnabled?: boolean;
+  model?: string;
+  temperature?: number;
 }
 
 export async function getPublicModels(): Promise<AIModel[]> {

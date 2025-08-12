@@ -1,4 +1,4 @@
-import { encrypt } from '@/lib/encryption';
+import { encryptApiKey } from '@/lib/encryption';
 
 export interface UserModel {
   id: string;
@@ -22,10 +22,12 @@ export interface CreateUserModelData {
   description?: string;
 }
 
-export async function getUserModelsFromDB(): Promise<UserModel[]> {
+export async function getUserModelsFromDB(userId: string): Promise<UserModel[]> {
   try {
     // For now, return empty array - this will be implemented when database schema is ready
     // TODO: Implement database queries when user_models table is created
+    // Filter by userId when database is implemented
+    console.log(`Getting user models for userId: ${userId}`);
     return [];
   } catch (error) {
     console.error('Error fetching user models from database:', error);
@@ -36,7 +38,7 @@ export async function getUserModelsFromDB(): Promise<UserModel[]> {
 export async function addUserModel(data: CreateUserModelData): Promise<UserModel> {
   try {
     // Encrypt the API key before storing
-    const encryptedApiKey = await encrypt(data.apiKey);
+    const encryptedApiKey = await encryptApiKey(data.apiKey);
     
     // For now, create a mock model - this will be implemented when database schema is ready
     // TODO: Implement database insert when user_models table is created
@@ -88,11 +90,11 @@ export async function updateUserModel(
   }
 }
 
-export async function deleteUserModel(): Promise<void> {
+export async function deleteUserModel(userId: string, modelId: string): Promise<void> {
   try {
     // For now, just log the deletion - this will be implemented when database schema is ready
     // TODO: Implement database delete when user_models table is created
-    console.log('Deleting user model');
+    console.log(`Deleting user model ${modelId} for userId: ${userId}`);
   } catch (error) {
     console.error('Error deleting user model:', error);
     throw new Error('Failed to delete user model');
