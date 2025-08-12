@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { ensureApplicationInitialized } from '@/lib/startup';
 
 /**
  * API endpoint for full application startup initialization
  * This runs in Node.js runtime where all dependencies are available
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     console.log('[STARTUP-API] Full startup initialization requested...');
     

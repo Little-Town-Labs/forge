@@ -3,13 +3,20 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
+interface StartupResult {
+  success: boolean;
+  message: string;
+  data?: unknown;
+  timestamp: string;
+}
+
 interface StartupTriggerProps {
   className?: string;
 }
 
 export function StartupTrigger({ className }: StartupTriggerProps) {
   const [isRunning, setIsRunning] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<StartupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const triggerStartup = async () => {

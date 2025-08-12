@@ -1,21 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-
-export interface AIModel {
-  id: string;
-  name: string;
-  provider: 'openai' | 'google' | 'anthropic' | 'custom';
-  model: string;
-  apiKey: string;
-  baseUrl?: string;
-  isDefault: boolean;
-  isEnabled: boolean;
-  maxTokens: number;
-  temperature: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { useUser } from '@clerk/nextjs';
+import { isAdmin } from '@/utils/admin';
+import { AIModel, getPublicModels, getAllAvailableModels } from '@/utils/models';
 
 interface ModelConfigContextType {
   models: AIModel[];
@@ -24,6 +12,7 @@ interface ModelConfigContextType {
   defaultModel: AIModel | null;
   isLoading: boolean;
   error: string | null;
+  isAdmin: boolean;
   refreshModels: () => Promise<void>;
   updateModelConfig: (model: AIModel) => Promise<void>;
 }
@@ -43,50 +32,92 @@ interface ModelConfigProviderProps {
 }
 
 export const ModelConfigProvider: React.FC<ModelConfigProviderProps> = ({ children }) => {
+  const { user } = useUser();
   const [models, setModels] = useState<AIModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userIsAdmin, setUserIsAdmin] = useState(false);
 
-  const defaultModel = models.find(model => model.isDefault && model.isEnabled) || null;
+  const defaultModel = models.find(model => model.id === 'gpt-4o-mini') || models[0] || null;
 
   const fetchModels = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch('/api/admin/config/models');
-      if (!response.ok) {
-        throw new Error('Failed to fetch models');
+      let fetchedModels: AIModel[] = [];
+      
+      if (userIsAdmin) {
+        // Admin users can try to fetch from admin endpoint first
+        try {
+          const response = await fetch('/api/admin/config/models');
+          if (response.ok) {
+            const data = await response.json();
+            fetchedModels = data.success ? (data.data.models || []) : [];
+          }
+        } catch {
+          console.log('Admin endpoint not available, falling back to public models');
+        }
       }
       
-      const data = await response.json();
-      const fetchedModels = data.success ? (data.data.models || []) : [];
+      // If no admin models or user is not admin, fetch public models
+      if (fetchedModels.length === 0 && user?.id) {
+        try {
+          const allModels = await getAllAvailableModels(user.id);
+          fetchedModels = allModels;
+        } catch {
+          console.log('Failed to fetch user models, using fallback models');
+          // Use fallback models from utils
+          fetchedModels = await getPublicModels();
+        }
+      }
+      
+      // If still no models, use fallback models
+      if (fetchedModels.length === 0) {
+        fetchedModels = await getPublicModels();
+      }
       
       setModels(fetchedModels);
       
       // Auto-select default model if no model is currently selected
-      // Only do this if we don't already have a selected model to prevent infinite loops
       if (!selectedModel && fetchedModels.length > 0) {
-        const defaultModel = fetchedModels.find((model: AIModel) => model.isDefault && model.isEnabled);
+        const defaultModel = fetchedModels.find((model: AIModel) => 
+          model.id === 'gpt-4o-mini' || model.isDefault
+        ) || fetchedModels[0];
         if (defaultModel) {
           setSelectedModel(defaultModel);
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch models');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch models';
+      setError(errorMessage);
       console.error('Error fetching models:', err);
+      
+      // Even on error, try to provide fallback models
+      try {
+        const fallbackModels = await getPublicModels();
+        setModels(fallbackModels);
+        if (fallbackModels.length > 0 && !selectedModel) {
+          setSelectedModel(fallbackModels[0]);
+        }
+      } catch (fallbackErr) {
+        console.error('Failed to load fallback models:', fallbackErr);
+      }
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Intentionally exclude selectedModel to prevent infinite loops
+  }, [user?.id, userIsAdmin, selectedModel]);
 
   const refreshModels = useCallback(async () => {
     await fetchModels();
   }, [fetchModels]);
 
   const updateModelConfig = async (model: AIModel) => {
+    if (!userIsAdmin) {
+      throw new Error('Only administrators can update model configurations');
+    }
+    
     try {
       const response = await fetch('/api/admin/config/models', {
         method: 'POST',
@@ -103,11 +134,24 @@ export const ModelConfigProvider: React.FC<ModelConfigProviderProps> = ({ childr
       // Refresh models to get updated data
       await refreshModels();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update model configuration');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update model configuration';
+      setError(errorMessage);
       console.error('Error updating model configuration:', err);
       throw err;
     }
   };
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (user?.id) {
+        const adminStatus = await isAdmin(user.id);
+        setUserIsAdmin(adminStatus);
+      }
+    };
+    
+    checkAdminStatus();
+  }, [user?.id]);
 
   // Listen for model configuration changes from admin panel
   useEffect(() => {
@@ -124,7 +168,7 @@ export const ModelConfigProvider: React.FC<ModelConfigProviderProps> = ({ childr
     };
   }, [refreshModels]);
 
-  // Fetch models on mount
+  // Fetch models on mount and when admin status changes
   useEffect(() => {
     fetchModels();
   }, [fetchModels]);
@@ -132,7 +176,9 @@ export const ModelConfigProvider: React.FC<ModelConfigProviderProps> = ({ childr
   // Handle model selection changes separately to prevent infinite loops
   useEffect(() => {
     if (models.length > 0 && !selectedModel) {
-      const defaultModel = models.find((model: AIModel) => model.isDefault && model.isEnabled);
+      const defaultModel = models.find((model: AIModel) => 
+        model.id === 'gpt-4o-mini' || model.isDefault
+      ) || models[0];
       if (defaultModel) {
         setSelectedModel(defaultModel);
       }
@@ -146,6 +192,7 @@ export const ModelConfigProvider: React.FC<ModelConfigProviderProps> = ({ childr
     defaultModel,
     isLoading,
     error,
+    isAdmin: userIsAdmin,
     refreshModels,
     updateModelConfig,
   };

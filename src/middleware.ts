@@ -1,5 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { getEdgeStartupStatus, isEdgeStartupReady } from './lib/startup-edge';
+import { getEdgeStartupStatus } from './lib/startup-edge';
 
 // Define routes that require authentication
 const isProtectedRoute = createRouteMatcher([
